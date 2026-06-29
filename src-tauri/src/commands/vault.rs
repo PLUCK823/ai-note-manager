@@ -21,7 +21,7 @@ pub async fn select_vault(
         .map_err(|_| AppError::PermissionDenied)?;
 
     let vault = VaultService::vault_info_from_path(selected_path)?;
-    state.set_active_vault_id(Some(vault.id.clone()))?;
+    state.set_active_vault(Some(vault.clone()))?;
     Ok(vault)
 }
 
@@ -31,6 +31,6 @@ pub async fn open_recent_vault(
     state: State<'_, AppState>,
 ) -> Result<VaultInfo, AppError> {
     let vault = VaultService::vault_info_from_path(path)?;
-    state.set_active_vault_id(Some(vault.id.clone()))?;
+    state.set_active_vault(Some(vault.clone()))?;
     Ok(vault)
 }

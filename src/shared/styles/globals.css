@@ -211,6 +211,18 @@ button {
   gap: 6px;
 }
 
+.empty-tree {
+  color: #6c766e;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.tree-node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .tree-item,
 .note-tab,
 .ai-action {

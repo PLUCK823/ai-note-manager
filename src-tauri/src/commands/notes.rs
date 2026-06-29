@@ -1,9 +1,17 @@
+use tauri::State;
+
+use crate::app_state::AppState;
 use crate::domain::note::{DeleteResult, FileTreeNode, NoteContent, NoteInfo, SaveResult};
 use crate::error::AppError;
+use crate::services::note_service::NoteService;
 
 #[tauri::command]
-pub async fn list_markdown_files(_vault_id: String) -> Result<Vec<FileTreeNode>, AppError> {
-    Ok(Vec::new())
+pub async fn list_markdown_files(
+    vault_id: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<FileTreeNode>, AppError> {
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::scan_markdown_tree(vault.path)
 }
 
 #[tauri::command]

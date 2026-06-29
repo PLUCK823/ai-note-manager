@@ -2,10 +2,15 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { App } from "./App";
+import { Providers } from "./providers";
 
 describe("App", () => {
   it("renders the initialized note manager workspace shell", () => {
-    render(<App />);
+    render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
 
     expect(
       screen.getByRole("heading", { name: "AI Note Manager" }),
