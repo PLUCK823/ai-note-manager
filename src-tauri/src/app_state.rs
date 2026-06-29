@@ -2,14 +2,32 @@ use std::sync::Mutex;
 
 use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
+use crate::infrastructure::db::Database;
 
-#[derive(Default)]
 pub struct AppState {
     active_vault: Mutex<Option<VaultInfo>>,
+    database: Mutex<Database>,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            active_vault: Mutex::new(None),
+            database: Mutex::new(
+                Database::open_in_memory().expect("failed to initialize application database"),
+            ),
+        }
+    }
 }
 
 impl AppState {
     pub fn set_active_vault(&self, vault: Option<VaultInfo>) -> Result<(), AppError> {
+        if let Some(vault) = &vault {
+            self.with_database(|database| {
+                database.upsert_vault(&vault.id, &vault.path, &vault.name)
+            })?;
+        }
+
         let mut active_vault = self.active_vault.lock().map_err(|_| AppError::Unknown)?;
         *active_vault = vault;
         Ok(())
@@ -24,6 +42,14 @@ impl AppState {
         }
 
         Ok(vault.clone())
+    }
+
+    pub fn with_database<T>(
+        &self,
+        operation: impl FnOnce(&Database) -> Result<T, AppError>,
+    ) -> Result<T, AppError> {
+        let database = self.database.lock().map_err(|_| AppError::Unknown)?;
+        operation(&database)
     }
 }
 

@@ -11,7 +11,9 @@ pub async fn list_markdown_files(
     state: State<'_, AppState>,
 ) -> Result<Vec<FileTreeNode>, AppError> {
     let vault = state.active_vault_for_id(&vault_id)?;
-    NoteService::scan_markdown_tree(vault.path)
+    let tree = NoteService::scan_markdown_tree(&vault.path)?;
+    state.with_database(|database| NoteService::index_markdown_tree(database, &vault, &tree))?;
+    Ok(tree)
 }
 
 #[tauri::command]

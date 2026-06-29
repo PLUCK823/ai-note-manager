@@ -4,7 +4,9 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 
 use crate::domain::note::{FileTreeNode, FileTreeNodeKind, NoteContent, SaveResult};
+use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
+use crate::infrastructure::db::Database;
 
 pub struct NoteService;
 
@@ -66,6 +68,31 @@ impl NoteService {
             conflict: false,
             snapshot_path: Some(snapshot_path),
         })
+    }
+
+    pub fn index_markdown_tree(
+        database: &Database,
+        vault: &VaultInfo,
+        tree: &[FileTreeNode],
+    ) -> Result<(), AppError> {
+        for node in tree {
+            if matches!(node.kind, FileTreeNodeKind::File) {
+                let note = Self::read_note(&vault.path, &node.path)?;
+                database.upsert_note_index(
+                    &Self::note_id(&vault.id, &node.path),
+                    &vault.id,
+                    &node.path,
+                    &Self::title_from_content(&note.content, &node.name),
+                    note.content.len() as i64,
+                    &note.content_hash,
+                    &note.content,
+                )?;
+            }
+
+            Self::index_markdown_tree(database, vault, &node.children)?;
+        }
+
+        Ok(())
     }
 
     fn scan_directory(root: &Path, directory: &Path) -> Result<Vec<FileTreeNode>, AppError> {
@@ -150,6 +177,20 @@ impl NoteService {
 
     fn content_hash(content: &str) -> String {
         format!("{:x}", Sha256::digest(content.as_bytes()))
+    }
+
+    fn note_id(vault_id: &str, path: &str) -> String {
+        Self::content_hash(&format!("{vault_id}:{path}"))
+    }
+
+    fn title_from_content(content: &str, fallback_name: &str) -> String {
+        content
+            .lines()
+            .map(str::trim)
+            .find_map(|line| line.strip_prefix("# ").map(str::trim))
+            .filter(|title| !title.is_empty())
+            .unwrap_or(fallback_name)
+            .to_string()
     }
 
     fn write_snapshot(root: &Path, relative_path: &str, content: &str) -> Result<String, AppError> {
