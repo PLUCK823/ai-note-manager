@@ -312,6 +312,13 @@ button {
   gap: 8px;
 }
 
+.save-message {
+  max-width: 240px;
+  color: #8b3f16;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
 .icon-button {
   width: 30px;
   min-height: 30px;

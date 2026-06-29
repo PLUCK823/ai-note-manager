@@ -40,6 +40,7 @@ pub struct SaveResult {
     pub path: String,
     pub content_hash: String,
     pub conflict: bool,
+    pub snapshot_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -72,6 +73,7 @@ mod tests {
             path: "README.md".to_string(),
             content_hash: "hash-2".to_string(),
             conflict: false,
+            snapshot_path: Some(".ai-note-manager/snapshots/hash.md".to_string()),
         };
 
         let note_value = serde_json::to_value(note).unwrap();
@@ -81,6 +83,10 @@ mod tests {
         assert_eq!(note_value["modifiedAt"], "now");
         assert!(note_value.get("content_hash").is_none());
         assert_eq!(save_value["contentHash"], "hash-2");
+        assert_eq!(
+            save_value["snapshotPath"],
+            ".ai-note-manager/snapshots/hash.md"
+        );
         assert!(save_value.get("content_hash").is_none());
     }
 }

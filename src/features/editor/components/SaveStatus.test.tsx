@@ -56,4 +56,27 @@ describe("SaveStatus", () => {
     );
     expect(useEditorStore.getState().baseHash).toBe("hash-2");
   });
+
+  it("shows a conflict when the file changed on disk", async () => {
+    saveNoteMock.mockResolvedValue({
+      path: "README.md",
+      contentHash: "disk-hash",
+      conflict: true,
+      snapshotPath: null,
+    });
+    useEditorStore.getState().setContent("# Local edit");
+
+    render(<SaveStatus />);
+
+    fireEvent.click(screen.getByRole("button", { name: /save note/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Conflict")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText(/file changed on disk/i),
+    ).toBeInTheDocument();
+    expect(useEditorStore.getState().content).toBe("# Local edit");
+    expect(useEditorStore.getState().baseHash).toBe("hash-1");
+  });
 });

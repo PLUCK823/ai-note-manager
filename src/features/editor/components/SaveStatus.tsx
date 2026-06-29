@@ -46,6 +46,11 @@ export function SaveStatus() {
   return (
     <span className="save-control">
       <span className={`save-status ${saveState}`}>{labels[saveState]}</span>
+      {saveState === "conflict" ? (
+        <span className="save-message">
+          File changed on disk. Reload before saving again.
+        </span>
+      ) : null}
       <Button
         aria-label="Save note"
         className="icon-button"

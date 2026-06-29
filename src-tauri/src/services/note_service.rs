@@ -40,16 +40,31 @@ impl NoteService {
         root: impl AsRef<Path>,
         relative_path: &str,
         content: &str,
-        _base_version: &str,
+        base_version: &str,
     ) -> Result<SaveResult, AppError> {
         let root = root.as_ref();
         let path = Self::resolve_note_path(root, relative_path)?;
+        let current_content = fs::read_to_string(&path).map_err(|_| AppError::FileReadFailed)?;
+        let current_hash = Self::content_hash(&current_content);
+        let relative_path = Self::relative_path(root, &path)?;
+
+        if !base_version.is_empty() && current_hash != base_version {
+            return Ok(SaveResult {
+                path: relative_path,
+                content_hash: current_hash,
+                conflict: true,
+                snapshot_path: None,
+            });
+        }
+
+        let snapshot_path = Self::write_snapshot(root, &relative_path, &current_content)?;
         fs::write(&path, content).map_err(|_| AppError::FileWriteFailed)?;
 
         Ok(SaveResult {
-            path: Self::relative_path(root, &path)?,
+            path: relative_path,
             content_hash: Self::content_hash(content),
             conflict: false,
+            snapshot_path: Some(snapshot_path),
         })
     }
 
@@ -137,6 +152,19 @@ impl NoteService {
         format!("{:x}", Sha256::digest(content.as_bytes()))
     }
 
+    fn write_snapshot(root: &Path, relative_path: &str, content: &str) -> Result<String, AppError> {
+        let snapshot_root = root.join(".ai-note-manager").join("snapshots");
+        fs::create_dir_all(&snapshot_root).map_err(|_| AppError::FileWriteFailed)?;
+        let snapshot_name = format!(
+            "{}-{}.md",
+            Self::content_hash(relative_path),
+            Self::content_hash(content)
+        );
+        let snapshot_path = snapshot_root.join(snapshot_name);
+        fs::write(&snapshot_path, content).map_err(|_| AppError::FileWriteFailed)?;
+        Self::relative_path(root, &snapshot_path)
+    }
+
     fn file_name(path: &Path) -> Result<String, AppError> {
         path.file_name()
             .and_then(|name| name.to_str())
@@ -200,17 +228,42 @@ mod tests {
         let root = test_root("save");
         fs::create_dir_all(&root).unwrap();
         fs::write(root.join("Note.md"), "# Note").unwrap();
+        let base_hash = NoteService::read_note(&root, "Note.md")
+            .unwrap()
+            .content_hash;
 
-        let result = NoteService::save_note(&root, "Note.md", "# Updated", "old-hash").unwrap();
+        let result = NoteService::save_note(&root, "Note.md", "# Updated", &base_hash).unwrap();
         let escaped = NoteService::save_note(&root, "../outside.md", "bad", "old-hash");
 
         let saved_content = fs::read_to_string(root.join("Note.md")).unwrap();
-        fs::remove_dir_all(&root).unwrap();
 
         assert_eq!(saved_content, "# Updated");
         assert_eq!(result.path, "Note.md");
         assert!(!result.content_hash.is_empty());
+        assert!(result.snapshot_path.is_some());
         assert!(escaped.is_err());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn returns_conflict_without_overwriting_when_base_hash_is_stale() {
+        let root = test_root("conflict");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Note.md"), "# Original").unwrap();
+        let base_hash = NoteService::read_note(&root, "Note.md")
+            .unwrap()
+            .content_hash;
+        fs::write(root.join("Note.md"), "# External edit").unwrap();
+
+        let result = NoteService::save_note(&root, "Note.md", "# User edit", &base_hash).unwrap();
+        let content_after_save = fs::read_to_string(root.join("Note.md")).unwrap();
+
+        assert!(result.conflict);
+        assert_eq!(content_after_save, "# External edit");
+        assert_eq!(result.snapshot_path, None);
+
+        fs::remove_dir_all(&root).unwrap();
     }
 
     fn test_root(name: &str) -> std::path::PathBuf {

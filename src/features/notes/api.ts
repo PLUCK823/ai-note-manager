@@ -15,13 +15,15 @@ export function saveNote(
   content: string,
   baseVersion: string,
 ) {
-  return callCommand<{ path: string; contentHash: string; conflict: boolean }>(
-    "save_note",
-    {
-      vaultId,
-      path,
-      content,
-      baseVersion,
-    },
-  );
+  return callCommand<{
+    path: string;
+    contentHash: string;
+    conflict: boolean;
+    snapshotPath: string | null;
+  }>("save_note", {
+    vaultId,
+    path,
+    content,
+    baseVersion,
+  });
 }
