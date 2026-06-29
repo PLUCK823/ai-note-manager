@@ -418,7 +418,60 @@ button {
 }
 
 .settings-page {
-  display: none;
+  position: fixed;
+  right: 18px;
+  bottom: 48px;
+  width: 320px;
+  border: 1px solid rgba(23, 32, 27, 0.14);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fffdf8;
+  box-shadow: 0 16px 42px rgba(23, 32, 27, 0.16);
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-section h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.settings-section label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #46524b;
+  font-size: 0.82rem;
+}
+
+.settings-section input,
+.settings-section select {
+  min-height: 34px;
+  border: 1px solid rgba(23, 32, 27, 0.16);
+  border-radius: 7px;
+  padding: 0 9px;
+  color: #17201b;
+  background: #fffaf4;
+}
+
+.settings-section .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+}
+
+.settings-section .checkbox-label input {
+  min-height: auto;
+}
+
+.settings-message {
+  margin: 0;
+  color: #1f5f4a;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .status-bar {
