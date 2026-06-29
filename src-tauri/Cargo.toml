@@ -32,3 +32,4 @@ notify = "8.2.0"
 rusqlite = { version = "0.40.1", features = ["bundled"] }
 tokio = { version = "1.52.3", default-features = false, features = ["full"] }
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "stream", "rustls"] }
+sha2 = "0.10"

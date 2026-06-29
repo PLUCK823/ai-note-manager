@@ -306,6 +306,18 @@ button {
   font-weight: 700;
 }
 
+.save-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-button {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+}
+
 .save-status.dirty,
 .save-status.conflict,
 .save-status.failed {

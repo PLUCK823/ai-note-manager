@@ -1,7 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::domain::note::{FileTreeNode, FileTreeNodeKind};
+use sha2::{Digest, Sha256};
+
+use crate::domain::note::{FileTreeNode, FileTreeNodeKind, NoteContent, SaveResult};
 use crate::error::AppError;
 
 pub struct NoteService;
@@ -15,6 +17,40 @@ impl NoteService {
         }
 
         Self::scan_directory(root, root)
+    }
+
+    pub fn read_note(root: impl AsRef<Path>, relative_path: &str) -> Result<NoteContent, AppError> {
+        let root = root.as_ref();
+        let path = Self::resolve_note_path(root, relative_path)?;
+        let content = fs::read_to_string(&path).map_err(|_| AppError::FileReadFailed)?;
+        let modified_at = fs::metadata(&path)
+            .and_then(|metadata| metadata.modified())
+            .map_err(|_| AppError::FileReadFailed)
+            .map(|time| format!("{time:?}"))?;
+
+        Ok(NoteContent {
+            path: Self::relative_path(root, &path)?,
+            content_hash: Self::content_hash(&content),
+            content,
+            modified_at,
+        })
+    }
+
+    pub fn save_note(
+        root: impl AsRef<Path>,
+        relative_path: &str,
+        content: &str,
+        _base_version: &str,
+    ) -> Result<SaveResult, AppError> {
+        let root = root.as_ref();
+        let path = Self::resolve_note_path(root, relative_path)?;
+        fs::write(&path, content).map_err(|_| AppError::FileWriteFailed)?;
+
+        Ok(SaveResult {
+            path: Self::relative_path(root, &path)?,
+            content_hash: Self::content_hash(content),
+            conflict: false,
+        })
     }
 
     fn scan_directory(root: &Path, directory: &Path) -> Result<Vec<FileTreeNode>, AppError> {
@@ -72,6 +108,35 @@ impl NoteService {
             .is_some_and(|extension| extension.eq_ignore_ascii_case("md"))
     }
 
+    fn resolve_note_path(root: &Path, relative_path: &str) -> Result<PathBuf, AppError> {
+        if !root.is_dir() {
+            return Err(AppError::FileNotFound);
+        }
+
+        let requested_path = Path::new(relative_path);
+        if requested_path.is_absolute()
+            || requested_path
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir))
+        {
+            return Err(AppError::PermissionDenied);
+        }
+
+        let path = root.join(requested_path);
+        if !Self::is_markdown_path(&path) {
+            return Err(AppError::FileNotMarkdown);
+        }
+        if !path.exists() {
+            return Err(AppError::FileNotFound);
+        }
+
+        Ok(path)
+    }
+
+    fn content_hash(content: &str) -> String {
+        format!("{:x}", Sha256::digest(content.as_bytes()))
+    }
+
     fn file_name(path: &Path) -> Result<String, AppError> {
         path.file_name()
             .and_then(|name| name.to_str())
@@ -113,5 +178,42 @@ mod tests {
         assert_eq!(tree[1].children.len(), 1);
         assert_eq!(tree[1].children[0].name, "Plan.MD");
         assert_eq!(tree[1].children[0].path, "projects/Plan.MD");
+    }
+
+    #[test]
+    fn reads_markdown_note_content_with_hash() {
+        let root = test_root("read");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Note.md"), "# Note\n\nBody").unwrap();
+
+        let note = NoteService::read_note(&root, "Note.md").unwrap();
+
+        fs::remove_dir_all(&root).unwrap();
+
+        assert_eq!(note.path, "Note.md");
+        assert_eq!(note.content, "# Note\n\nBody");
+        assert!(!note.content_hash.is_empty());
+    }
+
+    #[test]
+    fn saves_markdown_note_content_and_rejects_path_escape() {
+        let root = test_root("save");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Note.md"), "# Note").unwrap();
+
+        let result = NoteService::save_note(&root, "Note.md", "# Updated", "old-hash").unwrap();
+        let escaped = NoteService::save_note(&root, "../outside.md", "bad", "old-hash");
+
+        let saved_content = fs::read_to_string(root.join("Note.md")).unwrap();
+        fs::remove_dir_all(&root).unwrap();
+
+        assert_eq!(saved_content, "# Updated");
+        assert_eq!(result.path, "Note.md");
+        assert!(!result.content_hash.is_empty());
+        assert!(escaped.is_err());
+    }
+
+    fn test_root(name: &str) -> std::path::PathBuf {
+        std::env::temp_dir().join(format!("ai-note-manager-{}-{}", name, std::process::id()))
     }
 }

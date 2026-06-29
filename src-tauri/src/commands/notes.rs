@@ -15,18 +15,25 @@ pub async fn list_markdown_files(
 }
 
 #[tauri::command]
-pub async fn read_note(_vault_id: String, _path: String) -> Result<NoteContent, AppError> {
-    Err(AppError::FileNotFound)
+pub async fn read_note(
+    vault_id: String,
+    path: String,
+    state: State<'_, AppState>,
+) -> Result<NoteContent, AppError> {
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::read_note(vault.path, &path)
 }
 
 #[tauri::command]
 pub async fn save_note(
-    _vault_id: String,
-    _path: String,
-    _content: String,
-    _base_version: String,
+    vault_id: String,
+    path: String,
+    content: String,
+    base_version: String,
+    state: State<'_, AppState>,
 ) -> Result<SaveResult, AppError> {
-    Err(AppError::VaultNotSelected)
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::save_note(vault.path, &path, &content, &base_version)
 }
 
 #[tauri::command]
