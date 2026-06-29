@@ -158,6 +158,27 @@ button {
   font-size: 0.88rem;
 }
 
+.vault-status > span:last-child {
+  min-width: 0;
+}
+
+.vault-path {
+  display: block;
+  overflow: hidden;
+  max-width: 226px;
+  color: #6c766e;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-error {
+  margin: 6px 0 0;
+  color: #8b3f16;
+  font-size: 0.78rem;
+}
+
 .status-dot {
   width: 8px;
   height: 8px;
