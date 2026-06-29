@@ -205,6 +205,43 @@ button {
   background: transparent;
 }
 
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-results p {
+  margin: 0;
+  color: #6c766e;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.search-result {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid rgba(23, 32, 27, 0.12);
+  border-radius: 7px;
+  padding: 9px;
+  color: #17201b;
+  background: rgba(255, 255, 255, 0.66);
+  text-align: left;
+}
+
+.search-result-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.search-result-path,
+.search-result-snippet {
+  color: #6c766e;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
 .file-tree {
   display: flex;
   flex-direction: column;

@@ -8,6 +8,7 @@ import { FileTree } from "../features/notes/components/FileTree";
 import { NoteHeader } from "../features/notes/components/NoteHeader";
 import { NoteTabs } from "../features/notes/components/NoteTabs";
 import { SearchBox } from "../features/search/components/SearchBox";
+import { SearchResults } from "../features/search/components/SearchResults";
 import { SettingsPage } from "../features/settings/components/SettingsPage";
 import { VaultPicker } from "../features/vault/components/VaultPicker";
 import { VaultStatus } from "../features/vault/components/VaultStatus";
@@ -29,6 +30,7 @@ export function AppLayout() {
         <VaultPicker />
         <VaultStatus />
         <SearchBox />
+        <SearchResults />
         <FileTree />
       </aside>
 

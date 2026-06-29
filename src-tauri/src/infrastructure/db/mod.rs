@@ -1,5 +1,6 @@
 use rusqlite::Connection;
 
+use crate::domain::search::SearchResult;
 use crate::error::AppError;
 
 pub const INIT_MIGRATION: &str = include_str!("migrations/001_init.sql");
@@ -106,6 +107,40 @@ impl Database {
             )
             .map_err(|_| AppError::DbError)
     }
+
+    pub fn search_notes(&self, vault_id: &str, query: &str) -> Result<Vec<SearchResult>, AppError> {
+        let query = query.trim();
+        if query.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut statement = self
+            .connection
+            .prepare(
+                "
+                SELECT notes_index.path, notes_index.title, snippet(notes_fts, 2, '', '', '…', 12)
+                FROM notes_fts
+                JOIN notes_index ON notes_index.id = notes_fts.note_id
+                WHERE notes_index.vault_id = ?1
+                  AND notes_fts MATCH ?2
+                ORDER BY rank
+                LIMIT 25
+                ",
+            )
+            .map_err(|_| AppError::DbError)?;
+        let rows = statement
+            .query_map(rusqlite::params![vault_id, query], |row| {
+                Ok(SearchResult {
+                    path: row.get(0)?,
+                    title: row.get(1)?,
+                    snippet: row.get(2)?,
+                })
+            })
+            .map_err(|_| AppError::DbError)?;
+
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|_| AppError::DbError)
+    }
 }
 
 #[cfg(test)]
@@ -142,5 +177,42 @@ mod tests {
             .unwrap();
 
         assert_eq!(database.indexed_note_count("vault:/tmp/notes").unwrap(), 1);
+    }
+
+    #[test]
+    fn searches_indexed_notes_by_body_and_title() {
+        let database = Database::open_in_memory().unwrap();
+        database
+            .upsert_vault("vault:/tmp/notes", "/tmp/notes", "notes")
+            .unwrap();
+        database
+            .upsert_note_index(
+                "note-1",
+                "vault:/tmp/notes",
+                "README.md",
+                "README",
+                12,
+                "hash-1",
+                "This note mentions rust and tauri.",
+            )
+            .unwrap();
+        database
+            .upsert_note_index(
+                "note-2",
+                "vault:/tmp/notes",
+                "Ideas.md",
+                "Ideas",
+                12,
+                "hash-2",
+                "Unrelated body.",
+            )
+            .unwrap();
+
+        let results = database.search_notes("vault:/tmp/notes", "tauri").unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].path, "README.md");
+        assert_eq!(results[0].title, "README");
+        assert!(results[0].snippet.to_lowercase().contains("tauri"));
     }
 }
