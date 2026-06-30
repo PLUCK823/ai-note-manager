@@ -8,4 +8,5 @@ export const aiActions: Array<{ id: AiAction; label: string }> = [
   { id: "expand_selection", label: "Expand" },
   { id: "suggest_title", label: "Title" },
   { id: "suggest_tags", label: "Tags" },
+  { id: "suggest_improvements", label: "Improvements" },
 ];

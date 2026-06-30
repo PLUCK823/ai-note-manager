@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 19 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 20 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -63,15 +63,18 @@ This document records the current implementation state of AI Note Manager after 
 19. Editor selection tracking and selected-text AI writes are implemented.
     Evidence: `MarkdownEditor` stores selected ranges, rewrite/compress/expand send `selectedText`, `ApplyChangeDialog` replaces only the selected range when confirmed, frontend selected-text tests.
 
+20. All MVP PRD AI actions are exposed in the frontend.
+    Evidence: `AiAction` includes summarize, todos, rewrite, compress, expand, title, tags, and improvement suggestions; `AiSidebar` tests cover improvement suggestions as a non-writing action.
+
 ## Verification
 
-The latest full verification for the selected-text AI write completion point used:
+The latest full verification for the improvement suggestions frontend completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 15 frontend tests, 28 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 16 frontend tests, 28 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -80,28 +83,22 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Markdown editor experience is basic.
    There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
 
-2. Some PRD AI actions are not exposed in the frontend.
-   Improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, compress, expand, title, and tags.
-
-3. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
+2. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
     The current AI flow is request/response, with confirmed whole-note replacement fallback and selected-range replacement for rewrite/compress/expand.
 
-4. External file watching is not implemented.
+3. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Expose the remaining PRD AI action in the frontend.
-   Add improvement suggestions to the UI with tests.
-
-2. Improve Markdown editing.
+1. Improve Markdown editing.
    Add CodeMirror 6 Markdown syntax highlighting, simple preview or split preview, and better large-file behavior.
 
-3. Add AI output utilities.
+2. Add AI output utilities.
    Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
 
-4. Add file watching and better conflict UX.
+3. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
 
-5. Add end-to-end smoke testing.
+4. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.

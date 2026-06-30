@@ -5,7 +5,8 @@ export type AiAction =
   | "compress_selection"
   | "expand_selection"
   | "suggest_title"
-  | "suggest_tags";
+  | "suggest_tags"
+  | "suggest_improvements";
 
 export type AiRunInput = {
   action: AiAction;

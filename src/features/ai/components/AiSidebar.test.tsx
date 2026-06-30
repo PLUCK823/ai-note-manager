@@ -41,6 +41,29 @@ describe("AiSidebar", () => {
     });
   });
 
+  it("runs improvement suggestions as a non-writing AI action", async () => {
+    runAiActionMock.mockResolvedValue({
+      requestId: "local-improvements",
+      output: "## Improvements\n\n- Add concrete next steps.",
+    });
+
+    render(<AiSidebar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Improvements" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("## Improvements")).toBeInTheDocument();
+    });
+    expect(screen.getByText("- Add concrete next steps.")).toBeInTheDocument();
+    expect(runAiActionMock).toHaveBeenCalledWith({
+      action: "suggest_improvements",
+      noteContent: "# Plan\n\nShip the MVP.",
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Apply AI change" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("previews rewrite output before applying it to the editor", async () => {
     runAiActionMock.mockResolvedValue({
       requestId: "local-2",
