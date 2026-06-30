@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useVaultStore } from "../features/vault/hooks";
@@ -41,6 +41,35 @@ describe("App", () => {
     expect(
       screen.getByRole("button", { name: /settings/i }),
     ).toBeInTheDocument();
+  });
+
+  it("switches between edit, split, and preview editor modes", () => {
+    render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    expect(
+      screen.getByRole("group", { name: "Editor view mode" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Markdown editor")).toBeInTheDocument();
+    expect(screen.getByLabelText("Markdown preview")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Preview" }));
+
+    expect(screen.queryByLabelText("Markdown editor")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Markdown preview")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(screen.getByLabelText("Markdown editor")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Markdown preview")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Split" }));
+
+    expect(screen.getByLabelText("Markdown editor")).toBeInTheDocument();
+    expect(screen.getByLabelText("Markdown preview")).toBeInTheDocument();
   });
 
   it("restores the most recent vault on startup", async () => {

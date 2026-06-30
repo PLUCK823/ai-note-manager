@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import type { EditorView } from "@codemirror/view";
+import { render, screen } from "@testing-library/react";
+import { act } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { useEditorStore } from "../editorState";
@@ -12,12 +14,26 @@ describe("MarkdownEditor", () => {
     });
   });
 
-  it("tracks selected markdown text in editor state", () => {
-    render(<MarkdownEditor />);
+  it("renders a CodeMirror markdown editor", () => {
+    const { container } = render(<MarkdownEditor />);
 
-    const editor = screen.getByLabelText("Markdown editor") as HTMLTextAreaElement;
-    editor.setSelectionRange(19, 32);
-    fireEvent.select(editor);
+    expect(screen.getByLabelText("Markdown editor")).toHaveClass("cm-content");
+    expect(container.querySelector(".cm-editor")).toBeInTheDocument();
+    expect(container.querySelector("textarea.markdown-editor")).not.toBeInTheDocument();
+  });
+
+  it("tracks selected markdown text in editor state", () => {
+    let editorView: EditorView | null = null;
+    render(<MarkdownEditor onEditorReady={(view) => (editorView = view)} />);
+
+    act(() => {
+      editorView?.dispatch({
+        selection: {
+          anchor: 19,
+          head: 32,
+        },
+      });
+    });
 
     expect(useEditorStore.getState().selection).toEqual({
       start: 19,

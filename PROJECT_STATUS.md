@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 20 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 21 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -66,22 +66,25 @@ This document records the current implementation state of AI Note Manager after 
 20. All MVP PRD AI actions are exposed in the frontend.
     Evidence: `AiAction` includes summarize, todos, rewrite, compress, expand, title, tags, and improvement suggestions; `AiSidebar` tests cover improvement suggestions as a non-writing action.
 
+21. Markdown editing now uses CodeMirror 6 with view mode controls.
+    Evidence: `MarkdownEditor` creates a CodeMirror Markdown editor with syntax highlighting, line numbers, history, line wrapping, and selected-text tracking; the workspace supports Edit, Split, and Preview modes with tests.
+
 ## Verification
 
-The latest full verification for the improvement suggestions frontend completion point used:
+The latest full verification for the CodeMirror Markdown editor completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 16 frontend tests, 28 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 18 frontend tests, 28 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
-1. Markdown editor experience is basic.
-   There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
+1. Markdown preview rendering is still basic.
+   The preview derives a title and body text, but it does not yet render full Markdown constructs like lists, code blocks, links, or frontmatter.
 
 2. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
     The current AI flow is request/response, with confirmed whole-note replacement fallback and selected-range replacement for rewrite/compress/expand.
@@ -91,14 +94,14 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 
 ## Next Priorities
 
-1. Improve Markdown editing.
-   Add CodeMirror 6 Markdown syntax highlighting, simple preview or split preview, and better large-file behavior.
-
-2. Add AI output utilities.
+1. Add AI output utilities.
    Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
 
-3. Add file watching and better conflict UX.
+2. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
+
+3. Improve Markdown preview rendering.
+   Render common Markdown blocks more faithfully while keeping source files unchanged.
 
 4. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.

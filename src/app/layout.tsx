@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FileText, PanelRight, Search, Settings } from "lucide-react";
 
 import { AiSidebar } from "../features/ai/components/AiSidebar";
@@ -15,6 +16,12 @@ import { VaultStatus } from "../features/vault/components/VaultStatus";
 import { Button } from "../shared/components/Button";
 
 export function AppLayout() {
+  const [editorMode, setEditorMode] = useState<"edit" | "split" | "preview">(
+    "split",
+  );
+  const showEditor = editorMode === "edit" || editorMode === "split";
+  const showPreview = editorMode === "preview" || editorMode === "split";
+
   return (
     <div className="app-shell">
       <aside className="vault-pane" aria-label="Vault navigation">
@@ -37,18 +44,44 @@ export function AppLayout() {
       <main className="workspace" aria-label="Note workspace">
         <NoteTabs />
         <NoteHeader />
-        <section className="editor-grid" aria-label="Editor and preview">
-          <div className="editor-surface">
-            <div className="surface-toolbar">
-              <span className="toolbar-title">
-                <FileText size={16} aria-hidden="true" />
-                Markdown
-              </span>
-              <SaveStatus />
-            </div>
-            <MarkdownEditor />
+        <div className="workspace-toolbar">
+          <span className="toolbar-title">
+            <FileText size={16} aria-hidden="true" />
+            Markdown
+          </span>
+          <div
+            aria-label="Editor view mode"
+            className="segmented-control"
+            role="group"
+          >
+            {(["edit", "split", "preview"] as const).map((mode) => (
+              <button
+                aria-pressed={editorMode === mode}
+                className="segment-button"
+                key={mode}
+                type="button"
+                onClick={() => setEditorMode(mode)}
+              >
+                {mode === "edit"
+                  ? "Edit"
+                  : mode === "split"
+                    ? "Split"
+                    : "Preview"}
+              </button>
+            ))}
           </div>
-          <MarkdownPreview />
+          <SaveStatus />
+        </div>
+        <section
+          className={`editor-grid editor-grid-${editorMode}`}
+          aria-label="Editor and preview"
+        >
+          {showEditor ? (
+            <div className="editor-surface">
+              <MarkdownEditor />
+            </div>
+          ) : null}
+          {showPreview ? <MarkdownPreview /> : null}
         </section>
       </main>
 

@@ -73,10 +73,11 @@ describe("FileTree opening notes", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Markdown editor")).toHaveValue(
-        "# Loaded\n\nFrom disk",
-      );
+      expect(useEditorStore.getState().content).toBe("# Loaded\n\nFrom disk");
     });
+    expect(screen.getByLabelText("Markdown editor")).toHaveTextContent(
+      "From disk",
+    );
     expect(useNotesStore.getState().activePath).toBe("README.md");
     expect(useEditorStore.getState().baseHash).toBe("hash-1");
   });
