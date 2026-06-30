@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use rusqlite::Connection;
 
 use crate::domain::search::SearchResult;
@@ -10,6 +12,13 @@ pub struct Database {
 }
 
 impl Database {
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, AppError> {
+        let connection = Connection::open(path).map_err(|_| AppError::DbError)?;
+        let database = Self { connection };
+        database.apply_migrations()?;
+        Ok(database)
+    }
+
     pub fn open_in_memory() -> Result<Self, AppError> {
         let connection = Connection::open_in_memory().map_err(|_| AppError::DbError)?;
         let database = Self { connection };
@@ -180,6 +189,32 @@ mod tests {
     }
 
     #[test]
+    fn persists_rows_when_reopened_from_disk() {
+        let path = test_database_path("persistent");
+        {
+            let database = Database::open(&path).unwrap();
+            database
+                .upsert_vault("vault:/tmp/notes", "/tmp/notes", "notes")
+                .unwrap();
+            database
+                .upsert_note_index(
+                    "note-1",
+                    "vault:/tmp/notes",
+                    "README.md",
+                    "README",
+                    12,
+                    "hash-1",
+                    "# README",
+                )
+                .unwrap();
+        }
+
+        let database = Database::open(&path).unwrap();
+
+        assert_eq!(database.indexed_note_count("vault:/tmp/notes").unwrap(), 1);
+    }
+
+    #[test]
     fn searches_indexed_notes_by_body_and_title() {
         let database = Database::open_in_memory().unwrap();
         database
@@ -214,5 +249,13 @@ mod tests {
         assert_eq!(results[0].path, "README.md");
         assert_eq!(results[0].title, "README");
         assert!(results[0].snippet.to_lowercase().contains("tauri"));
+    }
+
+    fn test_database_path(name: &str) -> std::path::PathBuf {
+        let root =
+            std::env::temp_dir().join(format!("ai-note-manager-db-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        root.join("metadata.sqlite3")
     }
 }

@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 11 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 12 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -39,15 +39,18 @@ This document records the current implementation state of AI Note Manager after 
 11. Non-sensitive settings are persisted and API keys are routed to the system credential store.
     Evidence: `SettingsService`, `settings.json` app-data persistence, `keyring` adapter in `infrastructure/security`.
 
+12. SQLite metadata is opened from the app-data directory instead of an in-memory database.
+    Evidence: `Database::open`, app startup `metadata.sqlite3` initialization, disk reopen persistence test.
+
 ## Verification
 
-The latest full verification for the settings persistence completion point used:
+The latest full verification for the SQLite disk persistence completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 10 frontend tests, 18 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 10 frontend tests, 19 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -56,34 +59,31 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Real cloud AI provider integration is not implemented.
    Current AI responses are local deterministic helpers, useful for wiring and tests but not a real model API.
 
-2. SQLite is currently in-memory.
-   The schema and indexing work exist, but app metadata is not persisted across app restarts.
-
-3. Recent vault restore is incomplete.
+2. Recent vault restore is incomplete.
    The database schema supports vaults and `last_opened_at`, but the app does not yet reload the most recent vault on startup.
 
-4. Markdown creation, rename, delete, and folder creation are not implemented.
+3. Markdown creation, rename, delete, and folder creation are not implemented.
    The commands exist as placeholders and return errors.
 
-5. Markdown editor experience is basic.
+4. Markdown editor experience is basic.
    There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
 
-6. AI selected-text flows are incomplete.
+5. AI selected-text flows are incomplete.
    The data model supports `selectedText`, but the editor does not yet track user selection for rewrite/compress/expand.
 
-7. Some PRD AI actions are not exposed in the frontend.
+6. Some PRD AI actions are not exposed in the frontend.
    Compress, expand, and improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, title, and tags.
 
-8. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
+7. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
     The current AI flow is request/response and whole-note replacement for write preview.
 
-9. External file watching is not implemented.
+8. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Persist SQLite to disk and restore recent vault.
-   Replace in-memory database startup with an app-data database file, then load the most recent vault on startup.
+1. Restore the most recent vault on startup.
+   Load the most recent existing vault from SQLite and hydrate frontend state when the app opens.
 
 2. Complete file management commands.
    Add create note, rename note, delete note with confirmation/trash behavior, and create folder.

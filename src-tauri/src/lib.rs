@@ -5,14 +5,23 @@ pub mod error;
 pub mod infrastructure;
 pub mod services;
 
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(app_state::AppState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .setup(|app| {
+            let app_data_dir = app.path().app_data_dir()?;
+            std::fs::create_dir_all(&app_data_dir)?;
+            let database =
+                infrastructure::db::Database::open(app_data_dir.join("metadata.sqlite3"))?;
+            app.manage(app_state::AppState::from_database(database));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::vault::select_vault,
             commands::vault::open_recent_vault,

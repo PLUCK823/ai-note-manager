@@ -21,6 +21,13 @@ impl Default for AppState {
 }
 
 impl AppState {
+    pub fn from_database(database: Database) -> Self {
+        Self {
+            active_vault: Mutex::new(None),
+            database: Mutex::new(database),
+        }
+    }
+
     pub fn set_active_vault(&self, vault: Option<VaultInfo>) -> Result<(), AppError> {
         if let Some(vault) = &vault {
             self.with_database(|database| {
