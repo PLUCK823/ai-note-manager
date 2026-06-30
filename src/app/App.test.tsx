@@ -1,10 +1,24 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useVaultStore } from "../features/vault/hooks";
 import { App } from "./App";
 import { Providers } from "./providers";
 
+const getRecentVaultMock = vi.fn();
+
+vi.mock("../features/vault/api", () => ({
+  getRecentVault: () => getRecentVaultMock(),
+  selectVault: vi.fn(),
+}));
+
 describe("App", () => {
+  beforeEach(() => {
+    getRecentVaultMock.mockReset();
+    getRecentVaultMock.mockResolvedValue(null);
+    useVaultStore.getState().setCurrentVault(null);
+  });
+
   it("renders the initialized note manager workspace shell", () => {
     render(
       <Providers>
@@ -27,5 +41,23 @@ describe("App", () => {
     expect(
       screen.getByRole("button", { name: /settings/i }),
     ).toBeInTheDocument();
+  });
+
+  it("restores the most recent vault on startup", async () => {
+    getRecentVaultMock.mockResolvedValue({
+      id: "vault:/Users/test/notes",
+      path: "/Users/test/notes",
+      name: "notes",
+      lastOpenedAt: "2026-06-30T12:00:00Z",
+    });
+
+    render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    expect(await screen.findByText("notes")).toBeInTheDocument();
+    expect(screen.getByText("/Users/test/notes")).toBeInTheDocument();
   });
 });

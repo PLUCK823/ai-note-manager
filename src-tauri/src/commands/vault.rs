@@ -34,3 +34,17 @@ pub async fn open_recent_vault(
     state.set_active_vault(Some(vault.clone()))?;
     Ok(vault)
 }
+
+#[tauri::command]
+pub async fn get_recent_vault(state: State<'_, AppState>) -> Result<Option<VaultInfo>, AppError> {
+    let Some(vault) = state.recent_vault()? else {
+        return Ok(None);
+    };
+
+    let vault = match VaultService::vault_info_from_path(&vault.path) {
+        Ok(vault) => vault,
+        Err(_) => return Ok(None),
+    };
+    state.set_active_vault(Some(vault.clone()))?;
+    Ok(Some(vault))
+}

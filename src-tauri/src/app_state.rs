@@ -58,6 +58,10 @@ impl AppState {
         let database = self.database.lock().map_err(|_| AppError::Unknown)?;
         operation(&database)
     }
+
+    pub fn recent_vault(&self) -> Result<Option<VaultInfo>, AppError> {
+        self.with_database(Database::recent_vault)
+    }
 }
 
 #[cfg(test)]

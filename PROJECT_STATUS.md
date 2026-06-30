@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 12 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 13 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -42,15 +42,18 @@ This document records the current implementation state of AI Note Manager after 
 12. SQLite metadata is opened from the app-data directory instead of an in-memory database.
     Evidence: `Database::open`, app startup `metadata.sqlite3` initialization, disk reopen persistence test.
 
+13. The most recent existing vault is restored on app startup.
+    Evidence: `get_recent_vault`, `Database::recent_vault`, app startup restore effect, frontend restore test.
+
 ## Verification
 
-The latest full verification for the SQLite disk persistence completion point used:
+The latest full verification for the recent vault restore completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 10 frontend tests, 19 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 20 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -59,52 +62,46 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Real cloud AI provider integration is not implemented.
    Current AI responses are local deterministic helpers, useful for wiring and tests but not a real model API.
 
-2. Recent vault restore is incomplete.
-   The database schema supports vaults and `last_opened_at`, but the app does not yet reload the most recent vault on startup.
-
-3. Markdown creation, rename, delete, and folder creation are not implemented.
+2. Markdown creation, rename, delete, and folder creation are not implemented.
    The commands exist as placeholders and return errors.
 
-4. Markdown editor experience is basic.
+3. Markdown editor experience is basic.
    There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
 
-5. AI selected-text flows are incomplete.
+4. AI selected-text flows are incomplete.
    The data model supports `selectedText`, but the editor does not yet track user selection for rewrite/compress/expand.
 
-6. Some PRD AI actions are not exposed in the frontend.
+5. Some PRD AI actions are not exposed in the frontend.
    Compress, expand, and improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, title, and tags.
 
-7. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
+6. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
     The current AI flow is request/response and whole-note replacement for write preview.
 
-8. External file watching is not implemented.
+7. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Restore the most recent vault on startup.
-   Load the most recent existing vault from SQLite and hydrate frontend state when the app opens.
-
-2. Complete file management commands.
+1. Complete file management commands.
    Add create note, rename note, delete note with confirmation/trash behavior, and create folder.
 
-3. Add real AI provider integration behind the existing command boundary.
+2. Add real AI provider integration behind the existing command boundary.
    Keep current-note-only privacy as the default, avoid logging note bodies or keys, and preserve the preview-before-write rule.
 
-4. Add editor selection tracking and selected-text AI writes.
+3. Add editor selection tracking and selected-text AI writes.
    Rewrite, compress, and expand should target selected text first, then show a focused diff before applying.
 
-5. Expose the full PRD AI action set in the frontend.
+4. Expose the full PRD AI action set in the frontend.
    Add compress, expand, and improvement suggestions to the UI with tests.
 
-6. Improve Markdown editing.
+5. Improve Markdown editing.
    Add CodeMirror 6 Markdown syntax highlighting, simple preview or split preview, and better large-file behavior.
 
-7. Add AI output utilities.
+6. Add AI output utilities.
    Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
 
-8. Add file watching and better conflict UX.
+7. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
 
-9. Add end-to-end smoke testing.
+8. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.

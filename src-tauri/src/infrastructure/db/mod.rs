@@ -3,6 +3,7 @@ use std::path::Path;
 use rusqlite::Connection;
 
 use crate::domain::search::SearchResult;
+use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
 
 pub const INIT_MIGRATION: &str = include_str!("migrations/001_init.sql");
@@ -117,6 +118,32 @@ impl Database {
             .map_err(|_| AppError::DbError)
     }
 
+    pub fn recent_vault(&self) -> Result<Option<VaultInfo>, AppError> {
+        let mut statement = self
+            .connection
+            .prepare(
+                "
+                SELECT id, path, name, last_opened_at
+                FROM vaults
+                ORDER BY last_opened_at DESC, updated_at DESC
+                LIMIT 1
+                ",
+            )
+            .map_err(|_| AppError::DbError)?;
+        let mut rows = statement.query([]).map_err(|_| AppError::DbError)?;
+
+        let Some(row) = rows.next().map_err(|_| AppError::DbError)? else {
+            return Ok(None);
+        };
+
+        Ok(Some(VaultInfo {
+            id: row.get(0).map_err(|_| AppError::DbError)?,
+            path: row.get(1).map_err(|_| AppError::DbError)?,
+            name: row.get(2).map_err(|_| AppError::DbError)?,
+            last_opened_at: row.get(3).map_err(|_| AppError::DbError)?,
+        }))
+    }
+
     pub fn search_notes(&self, vault_id: &str, query: &str) -> Result<Vec<SearchResult>, AppError> {
         let query = query.trim();
         if query.is_empty() {
@@ -212,6 +239,21 @@ mod tests {
         let database = Database::open(&path).unwrap();
 
         assert_eq!(database.indexed_note_count("vault:/tmp/notes").unwrap(), 1);
+    }
+
+    #[test]
+    fn returns_most_recent_vault() {
+        let database = Database::open_in_memory().unwrap();
+        database
+            .upsert_vault("vault:/tmp/notes", "/tmp/notes", "notes")
+            .unwrap();
+
+        let vault = database.recent_vault().unwrap().unwrap();
+
+        assert_eq!(vault.id, "vault:/tmp/notes");
+        assert_eq!(vault.path, "/tmp/notes");
+        assert_eq!(vault.name, "notes");
+        assert!(vault.last_opened_at.is_some());
     }
 
     #[test]

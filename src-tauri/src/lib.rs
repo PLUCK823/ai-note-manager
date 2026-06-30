@@ -25,6 +25,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::vault::select_vault,
             commands::vault::open_recent_vault,
+            commands::vault::get_recent_vault,
             commands::notes::list_markdown_files,
             commands::notes::read_note,
             commands::notes::save_note,
