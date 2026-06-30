@@ -395,6 +395,21 @@ button {
   line-height: 1.55;
 }
 
+.ai-output {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-output pre {
+  margin: 0;
+  white-space: pre-wrap;
+  color: #17201b;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
 .ai-sidebar {
   display: flex;
   flex-direction: column;

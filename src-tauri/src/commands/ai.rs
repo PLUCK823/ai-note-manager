@@ -1,9 +1,10 @@
 use crate::domain::ai::{AiRunInput, AiRunResult, ApplyChangeInput, ApplyChangeResult};
 use crate::error::AppError;
+use crate::services::ai_service::AiService;
 
 #[tauri::command]
-pub async fn run_ai_action(_input: AiRunInput) -> Result<AiRunResult, AppError> {
-    Err(AppError::AiApiKeyMissing)
+pub async fn run_ai_action(input: AiRunInput) -> Result<AiRunResult, AppError> {
+    AiService::run_action(input)
 }
 
 #[tauri::command]

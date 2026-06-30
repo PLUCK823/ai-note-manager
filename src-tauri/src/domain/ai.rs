@@ -14,6 +14,7 @@ pub enum AiAction {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AiRunInput {
     pub action: AiAction,
     pub note_content: String,
@@ -21,12 +22,14 @@ pub struct AiRunInput {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AiRunResult {
     pub request_id: String,
     pub output: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ApplyChangeInput {
     pub vault_id: String,
     pub path: String,
@@ -35,6 +38,7 @@ pub struct ApplyChangeInput {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ApplyChangeResult {
     pub path: String,
     pub content_hash: String,
