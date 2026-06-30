@@ -102,6 +102,40 @@ impl NoteService {
         })
     }
 
+    pub fn rename_note(
+        root: impl AsRef<Path>,
+        old_path: &str,
+        new_name: &str,
+    ) -> Result<NoteInfo, AppError> {
+        let root = root.as_ref();
+        let old_path = Self::resolve_note_path(root, old_path)?;
+        let new_name = new_name.trim();
+        if new_name.is_empty() || new_name.contains('/') || new_name.contains('\\') {
+            return Err(AppError::FileWriteFailed);
+        }
+
+        let file_name = if new_name.to_lowercase().ends_with(".md") {
+            new_name.to_string()
+        } else {
+            format!("{new_name}.md")
+        };
+        let new_path = old_path
+            .parent()
+            .ok_or(AppError::FileWriteFailed)?
+            .join(file_name);
+        if new_path.exists() {
+            return Err(AppError::FileWriteFailed);
+        }
+
+        fs::rename(&old_path, &new_path).map_err(|_| AppError::FileWriteFailed)?;
+        let title = new_name.trim_end_matches(".md").trim().to_string();
+
+        Ok(NoteInfo {
+            path: Self::relative_path(root, &new_path)?,
+            title,
+        })
+    }
+
     pub fn index_markdown_tree(
         database: &Database,
         vault: &VaultInfo,
@@ -380,6 +414,25 @@ mod tests {
         assert_eq!(note.path, "projects/Launch Plan.md");
         assert_eq!(note.title, "Launch Plan");
         assert_eq!(content, "# Launch Plan\n");
+        assert!(escaped.is_err());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn renames_markdown_note_and_rejects_path_separator_in_new_name() {
+        let root = test_root("rename");
+        let nested = root.join("projects");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(nested.join("Old.md"), "# Old").unwrap();
+
+        let note = NoteService::rename_note(&root, "projects/Old.md", "New Name").unwrap();
+        let escaped = NoteService::rename_note(&root, "projects/New Name.md", "../Bad");
+
+        assert_eq!(note.path, "projects/New Name.md");
+        assert_eq!(note.title, "New Name");
+        assert!(root.join("projects").join("New Name.md").exists());
+        assert!(!root.join("projects").join("Old.md").exists());
         assert!(escaped.is_err());
 
         fs::remove_dir_all(&root).unwrap();

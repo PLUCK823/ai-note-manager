@@ -51,11 +51,13 @@ pub async fn create_note(
 
 #[tauri::command]
 pub async fn rename_note(
-    _vault_id: String,
-    _old_path: String,
-    _new_name: String,
+    vault_id: String,
+    old_path: String,
+    new_name: String,
+    state: State<'_, AppState>,
 ) -> Result<NoteInfo, AppError> {
-    Err(AppError::VaultNotSelected)
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::rename_note(vault.path, &old_path, &new_name)
 }
 
 #[tauri::command]
