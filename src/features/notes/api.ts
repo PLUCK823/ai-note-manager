@@ -9,6 +9,19 @@ export function readNote(vaultId: string, path: string) {
   return callCommand<NoteContent>("read_note", { vaultId, path });
 }
 
+export function checkNoteStatus(
+  vaultId: string,
+  path: string,
+  baseVersion: string,
+) {
+  return callCommand<{
+    path: string;
+    modifiedAt: string;
+    contentHash: string;
+    changed: boolean;
+  }>("check_note_status", { vaultId, path, baseVersion });
+}
+
 export function saveNote(
   vaultId: string,
   path: string,

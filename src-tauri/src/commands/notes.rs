@@ -1,7 +1,9 @@
 use tauri::State;
 
 use crate::app_state::AppState;
-use crate::domain::note::{DeleteResult, FileTreeNode, NoteContent, NoteInfo, SaveResult};
+use crate::domain::note::{
+    DeleteResult, FileTreeNode, NoteContent, NoteDiskStatus, NoteInfo, SaveResult,
+};
 use crate::error::AppError;
 use crate::services::note_service::NoteService;
 
@@ -24,6 +26,17 @@ pub async fn read_note(
 ) -> Result<NoteContent, AppError> {
     let vault = state.active_vault_for_id(&vault_id)?;
     NoteService::read_note(vault.path, &path)
+}
+
+#[tauri::command]
+pub async fn check_note_status(
+    vault_id: String,
+    path: String,
+    base_version: String,
+    state: State<'_, AppState>,
+) -> Result<NoteDiskStatus, AppError> {
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::check_note_status(vault.path, &path, &base_version)
 }
 
 #[tauri::command]

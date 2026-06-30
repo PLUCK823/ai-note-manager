@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use sha2::{Digest, Sha256};
 
 use crate::domain::note::{
-    DeleteResult, FileTreeNode, FileTreeNodeKind, NoteContent, NoteInfo, SaveResult,
+    DeleteResult, FileTreeNode, FileTreeNodeKind, NoteContent, NoteDiskStatus, NoteInfo, SaveResult,
 };
 use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
@@ -37,6 +37,22 @@ impl NoteService {
             content_hash: Self::content_hash(&content),
             content,
             modified_at,
+        })
+    }
+
+    pub fn check_note_status(
+        root: impl AsRef<Path>,
+        relative_path: &str,
+        base_version: &str,
+    ) -> Result<NoteDiskStatus, AppError> {
+        let note = Self::read_note(root, relative_path)?;
+        let changed = !base_version.is_empty() && note.content_hash != base_version;
+
+        Ok(NoteDiskStatus {
+            path: note.path,
+            modified_at: note.modified_at,
+            content_hash: note.content_hash,
+            changed,
         })
     }
 
@@ -442,6 +458,25 @@ mod tests {
         assert!(result.conflict);
         assert_eq!(content_after_save, "# External edit");
         assert_eq!(result.snapshot_path, None);
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn reports_note_changed_when_disk_hash_differs_from_base_hash() {
+        let root = test_root("disk-status");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Note.md"), "# Original").unwrap();
+        let base_hash = NoteService::read_note(&root, "Note.md")
+            .unwrap()
+            .content_hash;
+        fs::write(root.join("Note.md"), "# External edit").unwrap();
+
+        let status = NoteService::check_note_status(&root, "Note.md", &base_hash).unwrap();
+
+        assert_eq!(status.path, "Note.md");
+        assert!(status.changed);
+        assert_ne!(status.content_hash, base_hash);
 
         fs::remove_dir_all(&root).unwrap();
     }

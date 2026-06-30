@@ -28,6 +28,7 @@ pub fn run() {
             commands::vault::get_recent_vault,
             commands::notes::list_markdown_files,
             commands::notes::read_note,
+            commands::notes::check_note_status,
             commands::notes::save_note,
             commands::notes::create_note,
             commands::notes::create_folder,

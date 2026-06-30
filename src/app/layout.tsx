@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FileText, PanelRight, Search, Settings } from "lucide-react";
 
 import { AiSidebar } from "../features/ai/components/AiSidebar";
+import { DiskChangeNotice } from "../features/editor/components/DiskChangeNotice";
 import { MarkdownEditor } from "../features/editor/components/MarkdownEditor";
 import { MarkdownPreview } from "../features/editor/components/MarkdownPreview";
 import { SaveStatus } from "../features/editor/components/SaveStatus";
@@ -44,6 +45,7 @@ export function AppLayout() {
       <main className="workspace" aria-label="Note workspace">
         <NoteTabs />
         <NoteHeader />
+        <DiskChangeNotice />
         <div className="workspace-toolbar">
           <span className="toolbar-title">
             <FileText size={16} aria-hidden="true" />

@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 22 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 23 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -72,15 +72,18 @@ This document records the current implementation state of AI Note Manager after 
 22. AI output utilities are implemented.
     Evidence: AI output can be copied, running generation can be cancelled and ignored when it resolves later, and non-writing output can be inserted at the editor cursor or appended to the note through the existing confirmation dialog.
 
+23. Active-note external change detection and conflict UX are implemented.
+    Evidence: `check_note_status` compares the active note's disk hash with the editor base hash, `DiskChangeNotice` polls the active note and offers Reload from disk or Keep editing, and save conflict protection remains in place.
+
 ## Verification
 
-The latest full verification for the AI output utilities completion point used:
+The latest full verification for the external change detection completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 22 frontend tests, 28 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 10 frontend test files / 24 frontend tests, 29 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -92,16 +95,16 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Streaming AI responses are not implemented.
     The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
 
-3. External file watching is not implemented.
-    Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
+3. External file detection is polling-based.
+    The app now detects active-note disk changes on an interval, but it does not yet use a native filesystem watcher event stream.
 
 ## Next Priorities
 
-1. Add file watching and better conflict UX.
-   Notify users when the active note changes on disk and provide reload/compare choices.
-
-2. Improve Markdown preview rendering.
+1. Improve Markdown preview rendering.
    Render common Markdown blocks more faithfully while keeping source files unchanged.
+
+2. Add native file watching.
+   Replace or augment active-note polling with native filesystem events for faster and broader vault change notifications.
 
 3. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.
