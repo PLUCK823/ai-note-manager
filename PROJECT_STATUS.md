@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 10 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 11 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -36,15 +36,18 @@ This document records the current implementation state of AI Note Manager after 
 10. AI write actions now require preview and confirmation before applying.
     Evidence: `bd9f19a feat: preview ai changes before applying`, `ApplyChangeDialog`, `AiService::apply_change`.
 
+11. Non-sensitive settings are persisted and API keys are routed to the system credential store.
+    Evidence: `SettingsService`, `settings.json` app-data persistence, `keyring` adapter in `infrastructure/security`.
+
 ## Verification
 
-The latest full verification for the P2-9 completion point used:
+The latest full verification for the settings persistence completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 10 frontend tests, 16 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 10 frontend tests, 18 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -53,64 +56,55 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Real cloud AI provider integration is not implemented.
    Current AI responses are local deterministic helpers, useful for wiring and tests but not a real model API.
 
-2. API key storage is not secure yet.
-   The UI says the key is stored in the system keychain, but `save_api_key` currently returns success without persisting to keychain.
-
-3. Settings are not persisted yet.
-   `get_settings` returns defaults and `update_settings` returns the input for the current call only.
-
-4. SQLite is currently in-memory.
+2. SQLite is currently in-memory.
    The schema and indexing work exist, but app metadata is not persisted across app restarts.
 
-5. Recent vault restore is incomplete.
+3. Recent vault restore is incomplete.
    The database schema supports vaults and `last_opened_at`, but the app does not yet reload the most recent vault on startup.
 
-6. Markdown creation, rename, delete, and folder creation are not implemented.
+4. Markdown creation, rename, delete, and folder creation are not implemented.
    The commands exist as placeholders and return errors.
 
-7. Markdown editor experience is basic.
+5. Markdown editor experience is basic.
    There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
 
-8. AI selected-text flows are incomplete.
+6. AI selected-text flows are incomplete.
    The data model supports `selectedText`, but the editor does not yet track user selection for rewrite/compress/expand.
 
-9. Some PRD AI actions are not exposed in the frontend.
+7. Some PRD AI actions are not exposed in the frontend.
    Compress, expand, and improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, title, and tags.
 
-10. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
+8. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
     The current AI flow is request/response and whole-note replacement for write preview.
 
-11. External file watching is not implemented.
+9. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Persist settings and API key safely.
-   Implement `SettingsService`, use Tauri store for non-sensitive settings, and use system keychain or a Tauri-approved secure storage path for API keys.
-
-2. Persist SQLite to disk and restore recent vault.
+1. Persist SQLite to disk and restore recent vault.
    Replace in-memory database startup with an app-data database file, then load the most recent vault on startup.
 
-3. Complete file management commands.
+2. Complete file management commands.
    Add create note, rename note, delete note with confirmation/trash behavior, and create folder.
 
-4. Add real AI provider integration behind the existing command boundary.
+3. Add real AI provider integration behind the existing command boundary.
    Keep current-note-only privacy as the default, avoid logging note bodies or keys, and preserve the preview-before-write rule.
 
-5. Add editor selection tracking and selected-text AI writes.
+4. Add editor selection tracking and selected-text AI writes.
    Rewrite, compress, and expand should target selected text first, then show a focused diff before applying.
 
-6. Expose the full PRD AI action set in the frontend.
+5. Expose the full PRD AI action set in the frontend.
    Add compress, expand, and improvement suggestions to the UI with tests.
 
-7. Improve Markdown editing.
+6. Improve Markdown editing.
    Add CodeMirror 6 Markdown syntax highlighting, simple preview or split preview, and better large-file behavior.
 
-8. Add AI output utilities.
+7. Add AI output utilities.
    Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
 
-9. Add file watching and better conflict UX.
+8. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
 
-10. Add end-to-end smoke testing.
+9. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.
