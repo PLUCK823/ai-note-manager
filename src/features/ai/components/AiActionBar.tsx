@@ -6,10 +6,15 @@ import { runAiAction } from "../api";
 import { useAiStore } from "../aiState";
 import type { AiAction } from "../types";
 
-const writingActions = new Set<AiAction>(["rewrite_selection"]);
+const writingActions = new Set<AiAction>([
+  "rewrite_selection",
+  "compress_selection",
+  "expand_selection",
+]);
 
 export function AiActionBar() {
   const noteContent = useEditorStore((state) => state.content);
+  const selection = useEditorStore((state) => state.selection);
   const setRunning = useAiStore((state) => state.setRunning);
   const setOutput = useAiStore((state) => state.setOutput);
   const setFailed = useAiStore((state) => state.setFailed);
@@ -17,11 +22,23 @@ export function AiActionBar() {
   async function handleAction(action: AiAction) {
     setRunning();
     try {
-      const result = await runAiAction({ action, noteContent });
+      const selectedRange = writingActions.has(action) ? selection : null;
+      const result = await runAiAction({
+        action,
+        noteContent,
+        ...(selectedRange ? { selectedText: selectedRange.text } : {}),
+      });
       setOutput(
         result.output,
         writingActions.has(action)
-          ? { original: noteContent, replacement: result.output }
+          ? selectedRange
+            ? {
+                end: selectedRange.end,
+                original: selectedRange.text,
+                replacement: result.output,
+                start: selectedRange.start,
+              }
+            : { original: noteContent, replacement: result.output }
           : null,
       );
     } catch {

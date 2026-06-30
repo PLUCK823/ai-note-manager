@@ -62,4 +62,80 @@ describe("AiSidebar", () => {
       "## Draft\n\nShip the MVP with clearer milestones.",
     );
   });
+
+  it("sends selected text for rewrite and applies the result only to that range", async () => {
+    useEditorStore.getState().loadContent({
+      content: "# Plan\n\nKeep this. Replace this.",
+      baseHash: "hash-2",
+    });
+    useEditorStore.getState().setSelection({
+      start: 19,
+      end: 32,
+      text: "Replace this.",
+    });
+    runAiActionMock.mockResolvedValue({
+      requestId: "local-3",
+      output: "Improve this.",
+    });
+
+    render(<AiSidebar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Rewrite" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "Apply AI change" })).toBeInTheDocument();
+    });
+    expect(runAiActionMock).toHaveBeenCalledWith({
+      action: "rewrite_selection",
+      noteContent: "# Plan\n\nKeep this. Replace this.",
+      selectedText: "Replace this.",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply change" }));
+
+    expect(useEditorStore.getState().content).toBe(
+      "# Plan\n\nKeep this. Improve this.",
+    );
+  });
+
+  it.each([
+    ["Compress", "compress_selection"],
+    ["Expand", "expand_selection"],
+  ] as const)(
+    "sends selected text for %s and applies the result only to that range",
+    async (buttonName, action) => {
+      useEditorStore.getState().loadContent({
+        content: "# Plan\n\nKeep this. Replace this.",
+        baseHash: "hash-2",
+      });
+      useEditorStore.getState().setSelection({
+        start: 19,
+        end: 32,
+        text: "Replace this.",
+      });
+      runAiActionMock.mockResolvedValue({
+        requestId: "local-4",
+        output: "Improve this.",
+      });
+
+      render(<AiSidebar />);
+
+      fireEvent.click(screen.getByRole("button", { name: buttonName }));
+
+      await waitFor(() => {
+        expect(screen.getByRole("dialog", { name: "Apply AI change" })).toBeInTheDocument();
+      });
+      expect(runAiActionMock).toHaveBeenCalledWith({
+        action,
+        noteContent: "# Plan\n\nKeep this. Replace this.",
+        selectedText: "Replace this.",
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Apply change" }));
+
+      expect(useEditorStore.getState().content).toBe(
+        "# Plan\n\nKeep this. Improve this.",
+      );
+    },
+  );
 });

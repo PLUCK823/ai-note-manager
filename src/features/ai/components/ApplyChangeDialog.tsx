@@ -6,6 +6,7 @@ import { useAiStore } from "../aiState";
 export function ApplyChangeDialog() {
   const pendingChange = useAiStore((state) => state.pendingChange);
   const clearPendingChange = useAiStore((state) => state.clearPendingChange);
+  const replaceRange = useEditorStore((state) => state.replaceRange);
   const setContent = useEditorStore((state) => state.setContent);
 
   function applyChange() {
@@ -13,7 +14,18 @@ export function ApplyChangeDialog() {
       return;
     }
 
-    setContent(pendingChange.replacement);
+    if (
+      typeof pendingChange.start === "number" &&
+      typeof pendingChange.end === "number"
+    ) {
+      replaceRange({
+        start: pendingChange.start,
+        end: pendingChange.end,
+        replacement: pendingChange.replacement,
+      });
+    } else {
+      setContent(pendingChange.replacement);
+    }
     clearPendingChange();
   }
 

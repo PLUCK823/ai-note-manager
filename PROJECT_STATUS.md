@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 18 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 19 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -60,15 +60,18 @@ This document records the current implementation state of AI Note Manager after 
 18. OpenAI Responses API integration is implemented behind the AI command boundary.
     Evidence: `OpenAiResponsesClient`, API key retrieval from keyring, settings model usage, provider request/response tests.
 
+19. Editor selection tracking and selected-text AI writes are implemented.
+    Evidence: `MarkdownEditor` stores selected ranges, rewrite/compress/expand send `selectedText`, `ApplyChangeDialog` replaces only the selected range when confirmed, frontend selected-text tests.
+
 ## Verification
 
-The latest full verification for the OpenAI provider integration completion point used:
+The latest full verification for the selected-text AI write completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 28 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 15 frontend tests, 28 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -77,34 +80,28 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Markdown editor experience is basic.
    There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
 
-2. AI selected-text flows are incomplete.
-   The data model supports `selectedText`, but the editor does not yet track user selection for rewrite/compress/expand.
+2. Some PRD AI actions are not exposed in the frontend.
+   Improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, compress, expand, title, and tags.
 
-3. Some PRD AI actions are not exposed in the frontend.
-   Compress, expand, and improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, title, and tags.
+3. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
+    The current AI flow is request/response, with confirmed whole-note replacement fallback and selected-range replacement for rewrite/compress/expand.
 
-4. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
-    The current AI flow is request/response and whole-note replacement for write preview.
-
-5. External file watching is not implemented.
+4. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Add editor selection tracking and selected-text AI writes.
-   Rewrite, compress, and expand should target selected text first, then show a focused diff before applying.
+1. Expose the remaining PRD AI action in the frontend.
+   Add improvement suggestions to the UI with tests.
 
-2. Expose the full PRD AI action set in the frontend.
-   Add compress, expand, and improvement suggestions to the UI with tests.
-
-3. Improve Markdown editing.
+2. Improve Markdown editing.
    Add CodeMirror 6 Markdown syntax highlighting, simple preview or split preview, and better large-file behavior.
 
-4. Add AI output utilities.
+3. Add AI output utilities.
    Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
 
-5. Add file watching and better conflict UX.
+4. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
 
-6. Add end-to-end smoke testing.
+5. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.

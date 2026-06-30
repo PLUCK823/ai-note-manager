@@ -3,8 +3,10 @@ import { create } from "zustand";
 type AiStatus = "idle" | "running" | "failed" | "done";
 
 type PendingChange = {
+  end?: number;
   original: string;
   replacement: string;
+  start?: number;
 };
 
 type AiState = {
