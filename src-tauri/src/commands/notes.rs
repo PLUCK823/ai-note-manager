@@ -40,11 +40,13 @@ pub async fn save_note(
 
 #[tauri::command]
 pub async fn create_note(
-    _vault_id: String,
-    _parent_path: String,
-    _title: String,
+    vault_id: String,
+    parent_path: String,
+    title: String,
+    state: State<'_, AppState>,
 ) -> Result<NoteInfo, AppError> {
-    Err(AppError::VaultNotSelected)
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::create_note(vault.path, &parent_path, &title)
 }
 
 #[tauri::command]

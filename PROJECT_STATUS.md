@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 13 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 14 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -45,15 +45,18 @@ This document records the current implementation state of AI Note Manager after 
 13. The most recent existing vault is restored on app startup.
     Evidence: `get_recent_vault`, `Database::recent_vault`, app startup restore effect, frontend restore test.
 
+14. Markdown note creation is implemented at the service and command boundary.
+    Evidence: `NoteService::create_note`, `create_note` command, path escape rejection test.
+
 ## Verification
 
-The latest full verification for the recent vault restore completion point used:
+The latest full verification for the Markdown note creation completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 20 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 21 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -62,7 +65,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Real cloud AI provider integration is not implemented.
    Current AI responses are local deterministic helpers, useful for wiring and tests but not a real model API.
 
-2. Markdown creation, rename, delete, and folder creation are not implemented.
+2. Markdown rename, delete, and folder creation are not implemented.
    The commands exist as placeholders and return errors.
 
 3. Markdown editor experience is basic.
@@ -82,8 +85,8 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 
 ## Next Priorities
 
-1. Complete file management commands.
-   Add create note, rename note, delete note with confirmation/trash behavior, and create folder.
+1. Continue file management commands.
+   Add rename note, delete note with confirmation/trash behavior, and create folder.
 
 2. Add real AI provider integration behind the existing command boundary.
    Keep current-note-only privacy as the default, avoid logging note bodies or keys, and preserve the preview-before-write rule.

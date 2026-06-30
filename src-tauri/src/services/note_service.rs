@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
-use crate::domain::note::{FileTreeNode, FileTreeNodeKind, NoteContent, SaveResult};
+use crate::domain::note::{FileTreeNode, FileTreeNodeKind, NoteContent, NoteInfo, SaveResult};
 use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
 use crate::infrastructure::db::Database;
@@ -67,6 +67,38 @@ impl NoteService {
             content_hash: Self::content_hash(content),
             conflict: false,
             snapshot_path: Some(snapshot_path),
+        })
+    }
+
+    pub fn create_note(
+        root: impl AsRef<Path>,
+        parent_path: &str,
+        title: &str,
+    ) -> Result<NoteInfo, AppError> {
+        let root = root.as_ref();
+        let parent = Self::resolve_folder_path(root, parent_path)?;
+        let title = title.trim();
+        if title.is_empty() || title.contains('/') || title.contains('\\') {
+            return Err(AppError::FileWriteFailed);
+        }
+
+        let file_name = if title.to_lowercase().ends_with(".md") {
+            title.to_string()
+        } else {
+            format!("{title}.md")
+        };
+        let path = parent.join(file_name);
+        if path.exists() {
+            return Err(AppError::FileWriteFailed);
+        }
+
+        let note_title = title.trim_end_matches(".md").trim();
+        let content = format!("# {note_title}\n");
+        fs::write(&path, content).map_err(|_| AppError::FileWriteFailed)?;
+
+        Ok(NoteInfo {
+            path: Self::relative_path(root, &path)?,
+            title: note_title.to_string(),
         })
     }
 
@@ -169,6 +201,33 @@ impl NoteService {
             return Err(AppError::FileNotMarkdown);
         }
         if !path.exists() {
+            return Err(AppError::FileNotFound);
+        }
+
+        Ok(path)
+    }
+
+    fn resolve_folder_path(root: &Path, relative_path: &str) -> Result<PathBuf, AppError> {
+        if !root.is_dir() {
+            return Err(AppError::FileNotFound);
+        }
+
+        let requested_path = Path::new(relative_path);
+        if requested_path.is_absolute()
+            || requested_path
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir))
+        {
+            return Err(AppError::PermissionDenied);
+        }
+
+        let path = if relative_path.trim().is_empty() {
+            root.to_path_buf()
+        } else {
+            root.join(requested_path)
+        };
+
+        if !path.is_dir() {
             return Err(AppError::FileNotFound);
         }
 
@@ -303,6 +362,25 @@ mod tests {
         assert!(result.conflict);
         assert_eq!(content_after_save, "# External edit");
         assert_eq!(result.snapshot_path, None);
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn creates_markdown_note_in_parent_folder_and_rejects_path_escape() {
+        let root = test_root("create");
+        let nested = root.join("projects");
+        fs::create_dir_all(&nested).unwrap();
+
+        let note = NoteService::create_note(&root, "projects", "Launch Plan").unwrap();
+        let escaped = NoteService::create_note(&root, "../outside", "Bad");
+
+        let content = fs::read_to_string(root.join("projects").join("Launch Plan.md")).unwrap();
+
+        assert_eq!(note.path, "projects/Launch Plan.md");
+        assert_eq!(note.title, "Launch Plan");
+        assert_eq!(content, "# Launch Plan\n");
+        assert!(escaped.is_err());
 
         fs::remove_dir_all(&root).unwrap();
     }
