@@ -50,6 +50,17 @@ pub async fn create_note(
 }
 
 #[tauri::command]
+pub async fn create_folder(
+    vault_id: String,
+    parent_path: String,
+    name: String,
+    state: State<'_, AppState>,
+) -> Result<FileTreeNode, AppError> {
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::create_folder(vault.path, &parent_path, &name)
+}
+
+#[tauri::command]
 pub async fn rename_note(
     vault_id: String,
     old_path: String,

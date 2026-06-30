@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 16 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 17 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -54,15 +54,18 @@ This document records the current implementation state of AI Note Manager after 
 16. Markdown note delete is implemented at the service and command boundary.
     Evidence: `NoteService::delete_note`, `delete_note` command, internal trash move test.
 
+17. Folder creation is implemented at the service and command boundary.
+    Evidence: `NoteService::create_folder`, `create_folder` command, path escape rejection test.
+
 ## Verification
 
-The latest full verification for the Markdown note delete completion point used:
+The latest full verification for the folder creation completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 23 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 24 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -71,46 +74,40 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Real cloud AI provider integration is not implemented.
    Current AI responses are local deterministic helpers, useful for wiring and tests but not a real model API.
 
-2. Folder creation is not implemented.
-   The commands exist as placeholders and return errors.
-
-3. Markdown editor experience is basic.
+2. Markdown editor experience is basic.
    There is no CodeMirror syntax highlighting, no robust preview mode, and no split view.
 
-4. AI selected-text flows are incomplete.
+3. AI selected-text flows are incomplete.
    The data model supports `selectedText`, but the editor does not yet track user selection for rewrite/compress/expand.
 
-5. Some PRD AI actions are not exposed in the frontend.
+4. Some PRD AI actions are not exposed in the frontend.
    Compress, expand, and improvement suggestions exist in the Rust enum/service path, but the frontend action list only exposes summarize, todos, rewrite, title, and tags.
 
-6. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
+5. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
     The current AI flow is request/response and whole-note replacement for write preview.
 
-7. External file watching is not implemented.
+6. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Continue file management commands.
-   Add create folder.
-
-2. Add real AI provider integration behind the existing command boundary.
+1. Add real AI provider integration behind the existing command boundary.
    Keep current-note-only privacy as the default, avoid logging note bodies or keys, and preserve the preview-before-write rule.
 
-3. Add editor selection tracking and selected-text AI writes.
+2. Add editor selection tracking and selected-text AI writes.
    Rewrite, compress, and expand should target selected text first, then show a focused diff before applying.
 
-4. Expose the full PRD AI action set in the frontend.
+3. Expose the full PRD AI action set in the frontend.
    Add compress, expand, and improvement suggestions to the UI with tests.
 
-5. Improve Markdown editing.
+4. Improve Markdown editing.
    Add CodeMirror 6 Markdown syntax highlighting, simple preview or split preview, and better large-file behavior.
 
-6. Add AI output utilities.
+5. Add AI output utilities.
    Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
 
-7. Add file watching and better conflict UX.
+6. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
 
-8. Add end-to-end smoke testing.
+7. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.

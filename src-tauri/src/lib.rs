@@ -30,6 +30,7 @@ pub fn run() {
             commands::notes::read_note,
             commands::notes::save_note,
             commands::notes::create_note,
+            commands::notes::create_folder,
             commands::notes::rename_note,
             commands::notes::delete_note,
             commands::search::search_notes,

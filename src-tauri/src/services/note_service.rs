@@ -161,6 +161,27 @@ impl NoteService {
         })
     }
 
+    pub fn create_folder(
+        root: impl AsRef<Path>,
+        parent_path: &str,
+        name: &str,
+    ) -> Result<FileTreeNode, AppError> {
+        let root = root.as_ref();
+        let parent = Self::resolve_folder_path(root, parent_path)?;
+        let name = name.trim();
+        if name.is_empty() || name.contains('/') || name.contains('\\') {
+            return Err(AppError::FileWriteFailed);
+        }
+
+        let path = parent.join(name);
+        if path.exists() {
+            return Err(AppError::FileWriteFailed);
+        }
+        fs::create_dir(&path).map_err(|_| AppError::FileWriteFailed)?;
+
+        Self::folder_node(root, path, Vec::new())
+    }
+
     pub fn index_markdown_tree(
         database: &Database,
         vault: &VaultInfo,
@@ -477,6 +498,29 @@ mod tests {
         assert!(!root.join("Note.md").exists());
         assert!(root.join(".ai-note-manager").join("trash").exists());
         assert!(escaped.is_err());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn creates_folder_in_parent_folder_and_rejects_path_escape() {
+        let root = test_root("create-folder");
+        let nested = root.join("projects");
+        fs::create_dir_all(&nested).unwrap();
+
+        let folder = NoteService::create_folder(&root, "projects", "Research").unwrap();
+        let escaped_parent = NoteService::create_folder(&root, "../outside", "Bad");
+        let escaped_name = NoteService::create_folder(&root, "projects", "../Bad");
+
+        assert_eq!(folder.name, "Research");
+        assert_eq!(folder.path, "projects/Research");
+        assert!(matches!(
+            folder.kind,
+            crate::domain::note::FileTreeNodeKind::Folder
+        ));
+        assert!(root.join("projects").join("Research").is_dir());
+        assert!(escaped_parent.is_err());
+        assert!(escaped_name.is_err());
 
         fs::remove_dir_all(&root).unwrap();
     }
