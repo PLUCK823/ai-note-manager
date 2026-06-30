@@ -6,6 +6,8 @@ import { runAiAction } from "../api";
 import { useAiStore } from "../aiState";
 import type { AiAction } from "../types";
 
+const writingActions = new Set<AiAction>(["rewrite_selection"]);
+
 export function AiActionBar() {
   const noteContent = useEditorStore((state) => state.content);
   const setRunning = useAiStore((state) => state.setRunning);
@@ -16,7 +18,12 @@ export function AiActionBar() {
     setRunning();
     try {
       const result = await runAiAction({ action, noteContent });
-      setOutput(result.output);
+      setOutput(
+        result.output,
+        writingActions.has(action)
+          ? { original: noteContent, replacement: result.output }
+          : null,
+      );
     } catch {
       setFailed();
     }

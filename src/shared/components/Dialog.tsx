@@ -12,7 +12,12 @@ export function Dialog({ children, open, title }: DialogProps) {
 
   return (
     <div className="dialog-backdrop" role="presentation">
-      <section className="dialog" role="dialog" aria-modal="true">
+      <section
+        className="dialog"
+        role="dialog"
+        aria-label={title}
+        aria-modal="true"
+      >
         <h2>{title}</h2>
         {children}
       </section>
