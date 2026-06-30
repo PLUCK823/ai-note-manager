@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 23 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 24 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -75,22 +75,25 @@ This document records the current implementation state of AI Note Manager after 
 23. Active-note external change detection and conflict UX are implemented.
     Evidence: `check_note_status` compares the active note's disk hash with the editor base hash, `DiskChangeNotice` polls the active note and offers Reload from disk or Keep editing, and save conflict protection remains in place.
 
+24. Markdown preview rendering supports common Markdown blocks.
+    Evidence: `parseMarkdownBlocks` strips YAML frontmatter and parses headings, paragraphs, unordered lists, ordered lists, and fenced code blocks; `MarkdownPreview` renders those blocks as React nodes and supports safe http/https inline links; frontend tests cover frontmatter hiding, links, lists, headings, and code blocks.
+
 ## Verification
 
-The latest full verification for the external change detection completion point used:
+The latest full verification for the Markdown preview rendering completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 10 frontend test files / 24 frontend tests, 29 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 25 frontend tests, 29 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
-1. Markdown preview rendering is still basic.
-   The preview derives a title and body text, but it does not yet render full Markdown constructs like lists, code blocks, links, or frontmatter.
+1. Markdown preview rendering is intentionally lightweight.
+   The preview now covers common Markdown blocks, but it does not yet support tables, images, task lists, footnotes, or full CommonMark edge cases.
 
 2. Streaming AI responses are not implemented.
     The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
@@ -100,11 +103,11 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 
 ## Next Priorities
 
-1. Improve Markdown preview rendering.
-   Render common Markdown blocks more faithfully while keeping source files unchanged.
-
-2. Add native file watching.
+1. Add native file watching.
    Replace or augment active-note polling with native filesystem events for faster and broader vault change notifications.
 
-3. Add end-to-end smoke testing.
+2. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.
+
+3. Expand Markdown preview coverage.
+   Add tables, images, task lists, and stricter CommonMark behavior if users need richer reading mode fidelity.
