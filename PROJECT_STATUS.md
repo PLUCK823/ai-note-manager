@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 21 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 22 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -69,15 +69,18 @@ This document records the current implementation state of AI Note Manager after 
 21. Markdown editing now uses CodeMirror 6 with view mode controls.
     Evidence: `MarkdownEditor` creates a CodeMirror Markdown editor with syntax highlighting, line numbers, history, line wrapping, and selected-text tracking; the workspace supports Edit, Split, and Preview modes with tests.
 
+22. AI output utilities are implemented.
+    Evidence: AI output can be copied, running generation can be cancelled and ignored when it resolves later, and non-writing output can be inserted at the editor cursor or appended to the note through the existing confirmation dialog.
+
 ## Verification
 
-The latest full verification for the CodeMirror Markdown editor completion point used:
+The latest full verification for the AI output utilities completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 18 frontend tests, 28 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 9 frontend test files / 22 frontend tests, 28 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -86,22 +89,19 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Markdown preview rendering is still basic.
    The preview derives a title and body text, but it does not yet render full Markdown constructs like lists, code blocks, links, or frontmatter.
 
-2. Streaming, cancel, copy output, and insert-at-position flows are incomplete.
-    The current AI flow is request/response, with confirmed whole-note replacement fallback and selected-range replacement for rewrite/compress/expand.
+2. Streaming AI responses are not implemented.
+    The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
 
 3. External file watching is not implemented.
     Save conflict detection exists, but there is no live file watcher notifying the UI when another tool changes a note.
 
 ## Next Priorities
 
-1. Add AI output utilities.
-   Add copy output, cancel generation, and insert-at-cursor or append-to-note flows with confirmation.
-
-2. Add file watching and better conflict UX.
+1. Add file watching and better conflict UX.
    Notify users when the active note changes on disk and provide reload/compare choices.
 
-3. Improve Markdown preview rendering.
+2. Improve Markdown preview rendering.
    Render common Markdown blocks more faithfully while keeping source files unchanged.
 
-4. Add end-to-end smoke testing.
+3. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.

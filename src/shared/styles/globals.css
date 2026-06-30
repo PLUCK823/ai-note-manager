@@ -467,6 +467,35 @@ button {
   gap: 10px;
 }
 
+.ai-preview-status,
+.ai-output-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-preview-status p {
+  margin-right: auto;
+}
+
+.ai-tool-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  border: 1px solid rgba(23, 32, 27, 0.14);
+  border-radius: 7px;
+  padding: 0 9px;
+  color: #17201b;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .ai-output pre {
   margin: 0;
   white-space: pre-wrap;

@@ -20,7 +20,7 @@ export function AiActionBar() {
   const setFailed = useAiStore((state) => state.setFailed);
 
   async function handleAction(action: AiAction) {
-    setRunning();
+    const requestId = setRunning();
     try {
       const selectedRange = writingActions.has(action) ? selection : null;
       const result = await runAiAction({
@@ -40,9 +40,10 @@ export function AiActionBar() {
               }
             : { original: noteContent, replacement: result.output }
           : null,
+        requestId,
       );
     } catch {
-      setFailed();
+      setFailed(requestId);
     }
   }
 

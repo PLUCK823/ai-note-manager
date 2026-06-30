@@ -22,19 +22,22 @@ type MarkdownEditorProps = {
 export function MarkdownEditor({ onEditorReady }: MarkdownEditorProps = {}) {
   const content = useEditorStore((state) => state.content);
   const setContent = useEditorStore((state) => state.setContent);
+  const setCursorPosition = useEditorStore((state) => state.setCursorPosition);
   const setSelection = useEditorStore((state) => state.setSelection);
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const contentRef = useRef(content);
   const onEditorReadyRef = useRef(onEditorReady);
   const setContentRef = useRef(setContent);
+  const setCursorPositionRef = useRef(setCursorPosition);
   const setSelectionRef = useRef(setSelection);
 
   useEffect(() => {
     onEditorReadyRef.current = onEditorReady;
     setContentRef.current = setContent;
+    setCursorPositionRef.current = setCursorPosition;
     setSelectionRef.current = setSelection;
-  }, [onEditorReady, setContent, setSelection]);
+  }, [onEditorReady, setContent, setCursorPosition, setSelection]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -61,6 +64,7 @@ export function MarkdownEditor({ onEditorReady }: MarkdownEditorProps = {}) {
     function updateSelection(state: EditorState) {
       const range = state.selection.main;
       const text = state.sliceDoc(range.from, range.to);
+      setCursorPositionRef.current(range.head);
       setSelectionRef.current(
         text
           ? {
