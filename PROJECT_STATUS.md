@@ -2,7 +2,7 @@
 
 Date: 2026-06-30
 
-This document records the current implementation state of AI Note Manager after the first 15 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 16 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -51,15 +51,18 @@ This document records the current implementation state of AI Note Manager after 
 15. Markdown note rename is implemented at the service and command boundary.
     Evidence: `NoteService::rename_note`, `rename_note` command, path separator rejection test.
 
+16. Markdown note delete is implemented at the service and command boundary.
+    Evidence: `NoteService::delete_note`, `delete_note` command, internal trash move test.
+
 ## Verification
 
-The latest full verification for the Markdown note rename completion point used:
+The latest full verification for the Markdown note delete completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 22 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 8 frontend test files / 11 frontend tests, 23 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -68,7 +71,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Real cloud AI provider integration is not implemented.
    Current AI responses are local deterministic helpers, useful for wiring and tests but not a real model API.
 
-2. Markdown delete and folder creation are not implemented.
+2. Folder creation is not implemented.
    The commands exist as placeholders and return errors.
 
 3. Markdown editor experience is basic.
@@ -89,7 +92,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 ## Next Priorities
 
 1. Continue file management commands.
-   Add delete note with confirmation/trash behavior and create folder.
+   Add create folder.
 
 2. Add real AI provider integration behind the existing command boundary.
    Keep current-note-only privacy as the default, avoid logging note bodies or keys, and preserve the preview-before-write rule.

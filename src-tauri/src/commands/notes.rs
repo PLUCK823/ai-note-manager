@@ -61,6 +61,11 @@ pub async fn rename_note(
 }
 
 #[tauri::command]
-pub async fn delete_note(_vault_id: String, _path: String) -> Result<DeleteResult, AppError> {
-    Err(AppError::VaultNotSelected)
+pub async fn delete_note(
+    vault_id: String,
+    path: String,
+    state: State<'_, AppState>,
+) -> Result<DeleteResult, AppError> {
+    let vault = state.active_vault_for_id(&vault_id)?;
+    NoteService::delete_note(vault.path, &path)
 }

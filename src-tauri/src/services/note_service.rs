@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
-use crate::domain::note::{FileTreeNode, FileTreeNodeKind, NoteContent, NoteInfo, SaveResult};
+use crate::domain::note::{
+    DeleteResult, FileTreeNode, FileTreeNodeKind, NoteContent, NoteInfo, SaveResult,
+};
 use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
 use crate::infrastructure::db::Database;
@@ -133,6 +135,29 @@ impl NoteService {
         Ok(NoteInfo {
             path: Self::relative_path(root, &new_path)?,
             title,
+        })
+    }
+
+    pub fn delete_note(
+        root: impl AsRef<Path>,
+        relative_path: &str,
+    ) -> Result<DeleteResult, AppError> {
+        let root = root.as_ref();
+        let path = Self::resolve_note_path(root, relative_path)?;
+        let relative_path = Self::relative_path(root, &path)?;
+        let trash_root = root.join(".ai-note-manager").join("trash");
+        fs::create_dir_all(&trash_root).map_err(|_| AppError::FileWriteFailed)?;
+        let trash_name = format!(
+            "{}-{}",
+            Self::content_hash(&relative_path),
+            Self::file_name(&path)?
+        );
+        let trash_path = trash_root.join(trash_name);
+        fs::rename(&path, trash_path).map_err(|_| AppError::FileWriteFailed)?;
+
+        Ok(DeleteResult {
+            path: relative_path,
+            moved_to_trash: true,
         })
     }
 
@@ -433,6 +458,24 @@ mod tests {
         assert_eq!(note.title, "New Name");
         assert!(root.join("projects").join("New Name.md").exists());
         assert!(!root.join("projects").join("Old.md").exists());
+        assert!(escaped.is_err());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn deletes_markdown_note_to_internal_trash_and_rejects_path_escape() {
+        let root = test_root("delete");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Note.md"), "# Note").unwrap();
+
+        let result = NoteService::delete_note(&root, "Note.md").unwrap();
+        let escaped = NoteService::delete_note(&root, "../outside.md");
+
+        assert_eq!(result.path, "Note.md");
+        assert!(result.moved_to_trash);
+        assert!(!root.join("Note.md").exists());
+        assert!(root.join(".ai-note-manager").join("trash").exists());
         assert!(escaped.is_err());
 
         fs::remove_dir_all(&root).unwrap();
