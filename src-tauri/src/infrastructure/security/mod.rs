@@ -11,4 +11,14 @@ impl SecretStorePort for SecretStore {
             .set_password(api_key)
             .map_err(|_| AppError::PermissionDenied)
     }
+
+    fn get_api_key(&self, provider: &str) -> Result<Option<String>, AppError> {
+        let entry = keyring::Entry::new("ai-note-manager", provider)
+            .map_err(|_| AppError::PermissionDenied)?;
+        match entry.get_password() {
+            Ok(api_key) => Ok(Some(api_key)),
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(_) => Err(AppError::PermissionDenied),
+        }
+    }
 }

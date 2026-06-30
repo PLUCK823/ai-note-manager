@@ -6,6 +6,7 @@ use crate::error::AppError;
 
 pub trait SecretStore {
     fn save_api_key(&self, provider: &str, api_key: &str) -> Result<(), AppError>;
+    fn get_api_key(&self, provider: &str) -> Result<Option<String>, AppError>;
 }
 
 pub struct SettingsService;
@@ -47,6 +48,13 @@ impl SettingsService {
             provider: provider.to_string(),
             saved: true,
         })
+    }
+
+    pub fn get_api_key(
+        secret_store: &impl SecretStore,
+        provider: &str,
+    ) -> Result<Option<String>, AppError> {
+        secret_store.get_api_key(provider)
     }
 
     fn settings_path(app_data_dir: impl AsRef<Path>) -> PathBuf {
@@ -106,6 +114,16 @@ mod tests {
         }
     }
 
+    #[test]
+    fn reads_api_key_from_secret_store() {
+        let secrets = RecordingSecretStore::default();
+        SettingsService::save_api_key(&secrets, "openai", "sk-test-secret").unwrap();
+
+        let api_key = SettingsService::get_api_key(&secrets, "openai").unwrap();
+
+        assert_eq!(api_key, Some("sk-test-secret".to_string()));
+    }
+
     #[derive(Default)]
     struct RecordingSecretStore {
         saved: RefCell<Option<(String, String)>>,
@@ -120,6 +138,15 @@ mod tests {
             self.saved
                 .replace(Some((provider.to_string(), api_key.to_string())));
             Ok(())
+        }
+
+        fn get_api_key(&self, provider: &str) -> Result<Option<String>, crate::error::AppError> {
+            Ok(self
+                .saved
+                .borrow()
+                .as_ref()
+                .filter(|(saved_provider, _)| saved_provider == provider)
+                .map(|(_, api_key)| api_key.clone()))
         }
     }
 

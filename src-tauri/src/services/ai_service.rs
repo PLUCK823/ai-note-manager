@@ -49,6 +49,19 @@ impl AiService {
         })
     }
 
+    pub fn provider_input(input: &AiRunInput) -> String {
+        let source = input
+            .selected_text
+            .as_deref()
+            .filter(|text| !text.trim().is_empty())
+            .unwrap_or(&input.note_content);
+        format!(
+            "{}\n\nNote content:\n{}",
+            Self::action_instruction(&input.action),
+            source.trim()
+        )
+    }
+
     fn summarize(content: &str) -> String {
         let first_lines = content
             .lines()
@@ -117,6 +130,27 @@ impl AiService {
         )
     }
 
+    fn action_instruction(action: &AiAction) -> &'static str {
+        match action {
+            AiAction::Summarize => "Summarize the note concisely in Markdown.",
+            AiAction::ExtractTodos => {
+                "Extract explicit and implied todos from the note in Markdown."
+            }
+            AiAction::RewriteSelection => {
+                "Rewrite the selected text while preserving the original meaning."
+            }
+            AiAction::CompressSelection => {
+                "Compress the selected text while preserving key details."
+            }
+            AiAction::ExpandSelection => {
+                "Expand the selected text with useful detail without inventing facts."
+            }
+            AiAction::SuggestTitle => "Suggest one clear title for the note.",
+            AiAction::SuggestTags => "Suggest stable short tags for the note.",
+            AiAction::SuggestImprovements => "Suggest concrete improvements for the note.",
+        }
+    }
+
     fn content_fingerprint(content: &str) -> u64 {
         content.bytes().fold(5381_u64, |hash, byte| {
             hash.wrapping_mul(33) ^ u64::from(byte)
@@ -171,6 +205,21 @@ mod tests {
             "# Plan\n\nShip the MVP with milestones."
         );
         assert!(!result.content_hash.is_empty());
+    }
+
+    #[test]
+    fn builds_provider_input_from_current_note() {
+        let input = AiRunInput {
+            action: AiAction::Summarize,
+            note_content: "# Plan\n\nShip the MVP.".to_string(),
+            selected_text: None,
+        };
+
+        let provider_input = AiService::provider_input(&input);
+
+        assert!(provider_input.contains("Summarize the note"));
+        assert!(provider_input.contains("# Plan"));
+        assert!(provider_input.contains("Ship the MVP."));
     }
 
     fn test_root(name: &str) -> std::path::PathBuf {
