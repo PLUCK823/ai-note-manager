@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 26 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 27 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -84,22 +84,25 @@ This document records the current implementation state of AI Note Manager after 
 26. End-to-end smoke testing is implemented.
     Evidence: `playwright.config.ts` starts the Vite frontend for Playwright, `e2e/smoke.spec.ts` mocks the Tauri command/event boundary and covers opening a vault, opening a note, editing, saving, searching, running an AI write action, and confirming the AI change. `pnpm check` now includes `pnpm e2e` so the smoke test runs with the full verification gate.
 
+27. Markdown preview rendering supports tables, images, and task lists.
+    Evidence: `parseMarkdownBlocks` parses pipe tables, http/https image syntax, and checkbox task list items; `MarkdownPreview` renders semantic tables, constrained images, and disabled task checkboxes without unsafe HTML; frontend tests cover table headers/cells, image alt/src, and checked/unchecked task items.
+
 ## Verification
 
-The latest full verification for the end-to-end smoke testing completion point used:
+The latest full verification for the Markdown preview expansion completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 25 frontend tests, 1 Playwright smoke test, 31 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 26 frontend tests, 1 Playwright smoke test, 31 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, but it does not yet support tables, images, task lists, footnotes, or full CommonMark edge cases.
+   The preview now covers common Markdown blocks, tables, images, and task lists, but it does not yet support footnotes, blockquotes, nested Markdown, local image asset resolution, or full CommonMark edge cases.
 
 2. Streaming AI responses are not implemented.
     The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
@@ -109,11 +112,11 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 
 ## Next Priorities
 
-1. Expand Markdown preview coverage.
-   Add tables, images, task lists, and stricter CommonMark behavior if users need richer reading mode fidelity.
-
-2. Add streaming AI responses.
+1. Add streaming AI responses.
    Move long-running AI output from request/response to Tauri events with chunk, done, error, and cancellation semantics.
 
-3. Add desktop-shell end-to-end coverage.
+2. Add desktop-shell end-to-end coverage.
    Extend Playwright coverage to launch the Tauri shell and exercise real filesystem/dialog behavior once the test harness is ready.
+
+3. Continue Markdown preview fidelity improvements.
+   Add footnotes, blockquotes, nested Markdown structures, local image resolution, and stricter CommonMark behavior if richer reading mode fidelity becomes important.

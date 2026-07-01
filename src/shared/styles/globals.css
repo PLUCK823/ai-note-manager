@@ -508,6 +508,7 @@ button {
 .markdown-preview-body p,
 .markdown-preview-body ul,
 .markdown-preview-body ol,
+.markdown-preview-body figure,
 .markdown-code-block {
   margin: 0;
 }
@@ -519,6 +520,22 @@ button {
 
 .markdown-preview-body li + li {
   margin-top: 4px;
+}
+
+.markdown-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.markdown-task-list label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.markdown-task-list input {
+  margin-top: 5px;
+  accent-color: #1f5f4a;
 }
 
 .markdown-preview-body a {
@@ -546,6 +563,50 @@ button {
 
 .preview-empty {
   color: #6c766e;
+}
+
+.markdown-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(23, 32, 27, 0.12);
+  border-radius: 7px;
+}
+
+.markdown-table-wrap table {
+  width: 100%;
+  min-width: 260px;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.markdown-table-wrap th,
+.markdown-table-wrap td {
+  border-bottom: 1px solid rgba(23, 32, 27, 0.1);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-table-wrap th {
+  color: #46524b;
+  background: rgba(23, 32, 27, 0.04);
+  font-weight: 800;
+}
+
+.markdown-table-wrap tr:last-child td {
+  border-bottom: 0;
+}
+
+.markdown-image {
+  overflow: hidden;
+  border: 1px solid rgba(23, 32, 27, 0.12);
+  border-radius: 7px;
+  background: rgba(23, 32, 27, 0.03);
+}
+
+.markdown-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .ai-output {

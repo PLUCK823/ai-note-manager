@@ -12,7 +12,10 @@ type MarkdownBlock =
   | { type: "paragraph"; text: string }
   | { type: "unorderedList"; items: string[] }
   | { type: "orderedList"; items: string[] }
-  | { type: "code"; language: string | null; code: string };
+  | { type: "taskList"; items: Array<{ checked: boolean; text: string }> }
+  | { type: "code"; language: string | null; code: string }
+  | { type: "table"; headers: string[]; rows: string[][] }
+  | { type: "image"; alt: string; src: string };
 
 export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   const lines = stripFrontmatter(content).split("\n");
@@ -56,6 +59,43 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
+    const table = parseTable(lines, index);
+    if (table) {
+      blocks.push(table.block);
+      index = table.nextIndex;
+      continue;
+    }
+
+    const image = trimmed.match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/);
+    if (image) {
+      blocks.push({
+        type: "image",
+        alt: image[1].trim(),
+        src: image[2],
+      });
+      index += 1;
+      continue;
+    }
+
+    if (/^[-*]\s+\[[ xX]\]\s+/.test(trimmed)) {
+      const items: Array<{ checked: boolean; text: string }> = [];
+      while (index < lines.length) {
+        const item = lines[index]
+          ?.trim()
+          .match(/^[-*]\s+\[([ xX])\]\s+(.+)$/);
+        if (!item) {
+          break;
+        }
+        items.push({
+          checked: item[1].toLowerCase() === "x",
+          text: item[2].trim(),
+        });
+        index += 1;
+      }
+      blocks.push({ type: "taskList", items });
+      continue;
+    }
+
     if (/^[-*]\s+/.test(trimmed)) {
       const items: string[] = [];
       while (index < lines.length) {
@@ -92,6 +132,9 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         !next ||
         /^```/.test(next) ||
         /^(#{1,3})\s+/.test(next) ||
+        parseTable(lines, index) ||
+        /^!\[[^\]]*\]\(https?:\/\/[^)\s]+\)$/.test(next) ||
+        /^[-*]\s+\[[ xX]\]\s+/.test(next) ||
         /^[-*]\s+/.test(next) ||
         /^\d+\.\s+/.test(next)
       ) {
@@ -104,6 +147,50 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function parseTable(lines: string[], index: number) {
+  const header = lines[index]?.trim() ?? "";
+  const separator = lines[index + 1]?.trim() ?? "";
+
+  if (!isTableRow(header) || !isTableSeparator(separator)) {
+    return null;
+  }
+
+  const headers = splitTableRow(header);
+  const rows: string[][] = [];
+  let nextIndex = index + 2;
+
+  while (nextIndex < lines.length && isTableRow(lines[nextIndex]?.trim() ?? "")) {
+    rows.push(splitTableRow(lines[nextIndex] ?? ""));
+    nextIndex += 1;
+  }
+
+  return {
+    block: {
+      type: "table" as const,
+      headers,
+      rows,
+    },
+    nextIndex,
+  };
+}
+
+function isTableRow(line: string) {
+  return line.startsWith("|") && line.endsWith("|") && splitTableRow(line).length > 1;
+}
+
+function isTableSeparator(line: string) {
+  return isTableRow(line) && splitTableRow(line).every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function splitTableRow(line: string) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
 }
 
 function stripFrontmatter(content: string) {

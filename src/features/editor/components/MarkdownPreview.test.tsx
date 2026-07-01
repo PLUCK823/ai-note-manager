@@ -57,4 +57,42 @@ describe("MarkdownPreview", () => {
 
     expect(screen.getByText("const ready = true;")).toBeInTheDocument();
   });
+
+  it("renders tables, images, and task lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-2",
+      content: [
+        "# Release Notes",
+        "",
+        "| Area | Status |",
+        "| --- | --- |",
+        "| Editor | Ready |",
+        "| Search | Watching |",
+        "",
+        "![Preview diagram](https://example.com/preview.png)",
+        "",
+        "- [x] Write smoke test",
+        "- [ ] Package release",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const table = screen.getByRole("table", { name: "Markdown table" });
+    expect(within(table).getByRole("columnheader", { name: "Area" }));
+    expect(within(table).getByRole("columnheader", { name: "Status" }));
+    expect(within(table).getByRole("cell", { name: "Editor" }));
+    expect(within(table).getByRole("cell", { name: "Watching" }));
+
+    const image = screen.getByRole("img", { name: "Preview diagram" });
+    expect(image).toHaveAttribute("src", "https://example.com/preview.png");
+
+    const taskList = screen.getByRole("list", {
+      name: "Markdown task list",
+    });
+    expect(within(taskList).getByLabelText("Write smoke test")).toBeChecked();
+    expect(
+      within(taskList).getByLabelText("Package release"),
+    ).not.toBeChecked();
+  });
 });

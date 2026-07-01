@@ -46,6 +46,25 @@ function renderBlock(
           ))}
         </ul>
       );
+    case "taskList":
+      return (
+        <ul key={key} aria-label="Markdown task list" className="markdown-task-list">
+          {block.items.map((item, itemIndex) => (
+            <li key={`${key}-${itemIndex}`}>
+              <label>
+                <input
+                  aria-label={item.text}
+                  checked={item.checked}
+                  disabled
+                  type="checkbox"
+                  readOnly
+                />
+                <span>{renderInline(item.text)}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      );
     case "orderedList":
       return (
         <ol key={key} aria-label="Markdown numbered list">
@@ -59,6 +78,39 @@ function renderBlock(
         <pre key={key} className="markdown-code-block">
           <code>{block.code}</code>
         </pre>
+      );
+    case "table":
+      return (
+        <div key={key} className="markdown-table-wrap">
+          <table aria-label="Markdown table">
+            <thead>
+              <tr>
+                {block.headers.map((header, headerIndex) => (
+                  <th key={`${key}-header-${headerIndex}`} scope="col">
+                    {renderInline(header)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, rowIndex) => (
+                <tr key={`${key}-row-${rowIndex}`}>
+                  {block.headers.map((_, cellIndex) => (
+                    <td key={`${key}-cell-${rowIndex}-${cellIndex}`}>
+                      {renderInline(row[cellIndex] ?? "")}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    case "image":
+      return (
+        <figure key={key} className="markdown-image">
+          <img alt={block.alt} src={block.src} />
+        </figure>
       );
   }
 }
