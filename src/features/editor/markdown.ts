@@ -12,13 +12,19 @@ type MarkdownListItem = {
   text: string;
 };
 
+type MarkdownTaskListItem = {
+  checked: boolean;
+  children: MarkdownTaskListItem[];
+  text: string;
+};
+
 type MarkdownBlock =
   | { type: "heading"; depth: 1 | 2 | 3; text: string }
   | { type: "paragraph"; text: string }
   | { type: "blockquote"; text: string }
   | { type: "unorderedList"; items: MarkdownListItem[] }
   | { type: "orderedList"; items: MarkdownListItem[] }
-  | { type: "taskList"; items: Array<{ checked: boolean; text: string }> }
+  | { type: "taskList"; items: MarkdownTaskListItem[] }
   | { type: "code"; language: string | null; code: string }
   | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "image"; alt: string; src: string }
@@ -106,22 +112,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    if (/^[-*]\s+\[[ xX]\]\s+/.test(trimmed)) {
-      const items: Array<{ checked: boolean; text: string }> = [];
-      while (index < lines.length) {
-        const item = lines[index]
-          ?.trim()
-          .match(/^[-*]\s+\[([ xX])\]\s+(.+)$/);
-        if (!item) {
-          break;
-        }
-        items.push({
-          checked: item[1].toLowerCase() === "x",
-          text: item[2].trim(),
-        });
-        index += 1;
-      }
-      blocks.push({ type: "taskList", items });
+    if (parseTaskListItem(line)) {
+      const list = parseTaskList(lines, index);
+      blocks.push(list.block);
+      index = list.nextIndex;
       continue;
     }
 
@@ -151,7 +145,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
         /^!\[[^\]]*\]\(https?:\/\/[^)\s]+\)$/.test(next) ||
-        /^[-*]\s+\[[ xX]\]\s+/.test(next) ||
+        Boolean(parseTaskListItem(lines[index] ?? "")) ||
         Boolean(parseUnorderedListItem(lines[index] ?? "")) ||
         Boolean(parseOrderedListItem(lines[index] ?? ""))
       ) {
@@ -168,6 +162,61 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function parseTaskList(lines: string[], index: number, baseIndent?: number) {
+  const firstItem = parseTaskListItem(lines[index] ?? "");
+  const listIndent = baseIndent ?? firstItem?.indent ?? 0;
+  const items: MarkdownTaskListItem[] = [];
+  let currentItem: MarkdownTaskListItem | null = null;
+  let nextIndex = index;
+
+  while (nextIndex < lines.length) {
+    const item = parseTaskListItem(lines[nextIndex] ?? "");
+    if (!item || item.indent < listIndent) {
+      break;
+    }
+
+    if (item.indent === listIndent) {
+      currentItem = {
+        checked: item.checked,
+        children: [],
+        text: item.text,
+      };
+      items.push(currentItem);
+      nextIndex += 1;
+      continue;
+    }
+
+    if (!currentItem) {
+      break;
+    }
+
+    const nestedList = parseTaskList(lines, nextIndex, item.indent);
+    currentItem.children.push(...nestedList.block.items);
+    nextIndex = nestedList.nextIndex;
+  }
+
+  return {
+    block: {
+      type: "taskList" as const,
+      items,
+    },
+    nextIndex,
+  };
+}
+
+function parseTaskListItem(line: string) {
+  const item = line.match(/^(\s*)[-*]\s+\[([ xX])\]\s+(.+)$/);
+  if (!item) {
+    return null;
+  }
+
+  return {
+    checked: item[2].toLowerCase() === "x",
+    indent: item[1].replace(/\t/g, "  ").length,
+    text: item[3].trim(),
+  };
 }
 
 function parseList<T extends "orderedList" | "unorderedList">(

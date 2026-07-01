@@ -5,6 +5,7 @@ import { useEditorStore } from "../editorState";
 
 type MarkdownBlock = ReturnType<typeof parseMarkdownBlocks>[number];
 type ListBlock = Extract<MarkdownBlock, { type: "orderedList" | "unorderedList" }>;
+type TaskListBlock = Extract<MarkdownBlock, { type: "taskList" }>;
 
 export function MarkdownPreview() {
   const content = useEditorStore((state) => state.content);
@@ -50,24 +51,7 @@ function renderBlock(
     case "unorderedList":
       return renderList(block.items, key, "unordered");
     case "taskList":
-      return (
-        <ul key={key} aria-label="Markdown task list" className="markdown-task-list">
-          {block.items.map((item, itemIndex) => (
-            <li key={`${key}-${itemIndex}`}>
-              <label>
-                <input
-                  aria-label={item.text}
-                  checked={item.checked}
-                  disabled
-                  type="checkbox"
-                  readOnly
-                />
-                <span>{renderInline(item.text)}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      );
+      return renderTaskList(block.items, key);
     case "orderedList":
       return renderList(block.items, key, "ordered");
     case "code":
@@ -121,6 +105,38 @@ function renderBlock(
         </ol>
       );
   }
+}
+
+function renderTaskList(
+  items: TaskListBlock["items"],
+  key: string,
+  nested = false,
+) {
+  return (
+    <ul
+      key={key}
+      aria-label={nested ? "Markdown nested task list" : "Markdown task list"}
+      className="markdown-task-list"
+    >
+      {items.map((item, itemIndex) => (
+        <li key={`${key}-${itemIndex}`}>
+          <label>
+            <input
+              aria-label={item.text}
+              checked={item.checked}
+              disabled
+              type="checkbox"
+              readOnly
+            />
+            <span>{renderInline(item.text)}</span>
+          </label>
+          {item.children.length > 0
+            ? renderTaskList(item.children, `${key}-${itemIndex}-nested`, true)
+            : null}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function renderList(

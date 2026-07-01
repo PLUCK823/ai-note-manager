@@ -203,4 +203,37 @@ describe("MarkdownPreview", () => {
     expect(within(nestedList).getByText("Run desktop smoke")).toBeInTheDocument();
     expect(within(outerList).getByText("Publish")).toBeInTheDocument();
   });
+
+  it("renders nested task lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-7",
+      content: [
+        "# Tasks",
+        "",
+        "- [ ] Prepare release",
+        "  - [x] Browser smoke passed",
+        "  - [ ] Desktop smoke passed",
+        "- [x] Publish notes",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const outerList = screen.getByRole("list", {
+      name: "Markdown task list",
+    });
+    const parentItem = within(outerList)
+      .getByLabelText("Prepare release")
+      .closest("li");
+    expect(parentItem).not.toBeNull();
+
+    const nestedList = within(parentItem!).getByRole("list", {
+      name: "Markdown nested task list",
+    });
+    expect(within(nestedList).getByLabelText("Browser smoke passed")).toBeChecked();
+    expect(
+      within(nestedList).getByLabelText("Desktop smoke passed"),
+    ).not.toBeChecked();
+    expect(within(outerList).getByLabelText("Publish notes")).toBeChecked();
+  });
 });
