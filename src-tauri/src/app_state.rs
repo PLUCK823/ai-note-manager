@@ -3,10 +3,12 @@ use std::sync::Mutex;
 use crate::domain::vault::VaultInfo;
 use crate::error::AppError;
 use crate::infrastructure::db::Database;
+use crate::infrastructure::fs::VaultWatcher;
 
 pub struct AppState {
     active_vault: Mutex<Option<VaultInfo>>,
     database: Mutex<Database>,
+    vault_watcher: Mutex<Option<VaultWatcher>>,
 }
 
 impl Default for AppState {
@@ -16,6 +18,7 @@ impl Default for AppState {
             database: Mutex::new(
                 Database::open_in_memory().expect("failed to initialize application database"),
             ),
+            vault_watcher: Mutex::new(None),
         }
     }
 }
@@ -25,6 +28,7 @@ impl AppState {
         Self {
             active_vault: Mutex::new(None),
             database: Mutex::new(database),
+            vault_watcher: Mutex::new(None),
         }
     }
 
@@ -61,6 +65,12 @@ impl AppState {
 
     pub fn recent_vault(&self) -> Result<Option<VaultInfo>, AppError> {
         self.with_database(Database::recent_vault)
+    }
+
+    pub fn set_vault_watcher(&self, watcher: VaultWatcher) -> Result<(), AppError> {
+        let mut vault_watcher = self.vault_watcher.lock().map_err(|_| AppError::Unknown)?;
+        *vault_watcher = Some(watcher);
+        Ok(())
     }
 }
 

@@ -1,7 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { Button } from "../../../shared/components/Button";
-import { checkNoteStatus, readNote } from "../../notes/api";
+import { listenToEvent } from "../../../shared/lib/tauri";
+import { checkNoteStatus, readNote, startVaultWatcher } from "../../notes/api";
 import { useNotesStore } from "../../notes/hooks";
 import { useVaultStore } from "../../vault/hooks";
 import { useEditorStore } from "../editorState";
@@ -17,9 +19,16 @@ type IgnoredChange = {
   key: string;
 };
 
-const pollIntervalMs = 5000;
+type VaultFileEvent = {
+  vaultId: string;
+  path: string;
+  kind: "created" | "modified" | "removed" | "renamed";
+};
+
+const vaultFileChangedEvent = "vault:file-changed";
 
 export function DiskChangeNotice() {
+  const queryClient = useQueryClient();
   const currentVault = useVaultStore((state) => state.currentVault);
   const activePath = useNotesStore((state) => state.activePath);
   const baseHash = useEditorStore((state) => state.baseHash);
@@ -28,27 +37,44 @@ export function DiskChangeNotice() {
   const [ignoredChange, setIgnoredChange] = useState<IgnoredChange | null>(
     null,
   );
-  const activeKey = currentVault && activePath ? `${currentVault.id}:${activePath}` : null;
+  const activeKey =
+    currentVault && activePath ? `${currentVault.id}:${activePath}` : null;
   const activeDiskChange =
     diskChange && diskChange.key === activeKey ? diskChange : null;
 
   useEffect(() => {
-    if (!currentVault || !activePath || !baseHash) {
+    if (!currentVault) {
+      return;
+    }
+
+    void startVaultWatcher(currentVault.id).catch(() => {});
+  }, [currentVault]);
+
+  useEffect(() => {
+    if (!currentVault) {
       return;
     }
 
     let isMounted = true;
+    let unlisten: (() => void) | null = null;
 
-    async function checkDiskStatus() {
-      const status = await checkNoteStatus(
-        currentVault!.id,
-        activePath!,
-        baseHash,
-      );
-      if (!isMounted) {
+    async function handleVaultFileEvent(event: VaultFileEvent) {
+      if (event.vaultId !== currentVault!.id) {
         return;
       }
 
+      void queryClient.invalidateQueries({
+        queryKey: ["markdown-files", currentVault!.id],
+      });
+
+      if (!activePath || !baseHash || event.path !== activePath) {
+        return;
+      }
+
+      const status = await checkNoteStatus(currentVault!.id, activePath, baseHash);
+      if (!isMounted) {
+        return;
+      }
       if (
         status.changed &&
         (ignoredChange?.key !== activeKey ||
@@ -64,16 +90,23 @@ export function DiskChangeNotice() {
       }
     }
 
-    void checkDiskStatus().catch(() => {});
-    const timer = window.setInterval(() => {
-      void checkDiskStatus().catch(() => {});
-    }, pollIntervalMs);
+    void listenToEvent<VaultFileEvent>(vaultFileChangedEvent, (event) => {
+      void handleVaultFileEvent(event).catch(() => {});
+    })
+      .then((removeListener) => {
+        if (isMounted) {
+          unlisten = removeListener;
+        } else {
+          removeListener();
+        }
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;
-      window.clearInterval(timer);
+      unlisten?.();
     };
-  }, [activeKey, activePath, baseHash, currentVault, ignoredChange]);
+  }, [activeKey, activePath, baseHash, currentVault, ignoredChange, queryClient]);
 
   async function reloadFromDisk() {
     if (!currentVault || !activePath) {

@@ -5,6 +5,10 @@ export function listMarkdownFiles(vaultId: string) {
   return callCommand<FileTreeNode[]>("list_markdown_files", { vaultId });
 }
 
+export function startVaultWatcher(vaultId: string) {
+  return callCommand<void>("start_vault_watcher", { vaultId });
+}
+
 export function readNote(vaultId: string, path: string) {
   return callCommand<NoteContent>("read_note", { vaultId, path });
 }

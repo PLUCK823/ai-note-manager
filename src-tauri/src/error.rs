@@ -15,6 +15,8 @@ pub enum AppError {
     FileWriteFailed,
     #[error("file_conflict")]
     FileConflict,
+    #[error("file_watch_failed")]
+    FileWatchFailed,
     #[error("db_error")]
     DbError,
     #[error("ai_api_key_missing")]
@@ -38,6 +40,7 @@ impl AppError {
             Self::FileReadFailed => "file_read_failed",
             Self::FileWriteFailed => "file_write_failed",
             Self::FileConflict => "file_conflict",
+            Self::FileWatchFailed => "file_watch_failed",
             Self::DbError => "db_error",
             Self::AiApiKeyMissing => "ai_api_key_missing",
             Self::AiRequestFailed => "ai_request_failed",

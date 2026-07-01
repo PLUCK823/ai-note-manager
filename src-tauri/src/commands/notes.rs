@@ -1,10 +1,11 @@
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 
 use crate::app_state::AppState;
 use crate::domain::note::{
     DeleteResult, FileTreeNode, NoteContent, NoteDiskStatus, NoteInfo, SaveResult,
 };
 use crate::error::AppError;
+use crate::infrastructure::fs::{VaultWatcher, VAULT_FILE_CHANGED_EVENT};
 use crate::services::note_service::NoteService;
 
 #[tauri::command]
@@ -16,6 +17,19 @@ pub async fn list_markdown_files(
     let tree = NoteService::scan_markdown_tree(&vault.path)?;
     state.with_database(|database| NoteService::index_markdown_tree(database, &vault, &tree))?;
     Ok(tree)
+}
+
+#[tauri::command]
+pub async fn start_vault_watcher(
+    vault_id: String,
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), AppError> {
+    let vault = state.active_vault_for_id(&vault_id)?;
+    let watcher = VaultWatcher::new(vault.id, vault.path.into(), move |payload| {
+        let _ = app.emit(VAULT_FILE_CHANGED_EVENT, payload);
+    })?;
+    state.set_vault_watcher(watcher)
 }
 
 #[tauri::command]

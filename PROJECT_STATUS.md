@@ -1,8 +1,8 @@
 # Project Status
 
-Date: 2026-06-30
+Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 24 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 25 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -78,15 +78,18 @@ This document records the current implementation state of AI Note Manager after 
 24. Markdown preview rendering supports common Markdown blocks.
     Evidence: `parseMarkdownBlocks` strips YAML frontmatter and parses headings, paragraphs, unordered lists, ordered lists, and fenced code blocks; `MarkdownPreview` renders those blocks as React nodes and supports safe http/https inline links; frontend tests cover frontmatter hiding, links, lists, headings, and code blocks.
 
+25. Native vault file watching is implemented.
+    Evidence: `start_vault_watcher` starts a `notify` recursive watcher for the active vault, `VaultWatcher` emits normalized Markdown file payloads through the `vault:file-changed` Tauri event, `DiskChangeNotice` subscribes to that event instead of polling, invalidates the Markdown file tree query, and checks the active note status only when a matching event arrives.
+
 ## Verification
 
-The latest full verification for the Markdown preview rendering completion point used:
+The latest full verification for the native vault file watching completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 25 frontend tests, 29 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 25 frontend tests, 31 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -98,16 +101,16 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Streaming AI responses are not implemented.
     The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
 
-3. External file detection is polling-based.
-    The app now detects active-note disk changes on an interval, but it does not yet use a native filesystem watcher event stream.
+3. End-to-end smoke testing is not implemented.
+    The app has unit and component coverage, but it does not yet have Playwright coverage for the full desktop workflow.
 
 ## Next Priorities
 
-1. Add native file watching.
-   Replace or augment active-note polling with native filesystem events for faster and broader vault change notifications.
-
-2. Add end-to-end smoke testing.
+1. Add end-to-end smoke testing.
     Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.
 
-3. Expand Markdown preview coverage.
+2. Expand Markdown preview coverage.
    Add tables, images, task lists, and stricter CommonMark behavior if users need richer reading mode fidelity.
+
+3. Add streaming AI responses.
+   Move long-running AI output from request/response to Tauri events with chunk, done, error, and cancellation semantics.
