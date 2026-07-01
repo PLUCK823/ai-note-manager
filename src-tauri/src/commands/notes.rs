@@ -62,7 +62,12 @@ pub async fn save_note(
     state: State<'_, AppState>,
 ) -> Result<SaveResult, AppError> {
     let vault = state.active_vault_for_id(&vault_id)?;
-    NoteService::save_note(vault.path, &path, &content, &base_version)
+    let result = NoteService::save_note(&vault.path, &path, &content, &base_version)?;
+    if !result.conflict {
+        state
+            .with_database(|database| NoteService::index_markdown_note(database, &vault, &path))?;
+    }
+    Ok(result)
 }
 
 #[tauri::command]

@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 35 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 36 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -111,15 +111,18 @@ This document records the current implementation state of AI Note Manager after 
 35. Markdown preview rendering supports local vault image assets.
     Evidence: `parseMarkdownBlocks` accepts local image targets, `MarkdownPreview` resolves relative image paths against the active note directory inside the selected vault, uses Tauri `convertFileSrc` for desktop-safe asset URLs, rejects absolute paths and `..` paths that escape the vault, and `tauri.conf.json` enables the asset protocol with a home-directory scope. Frontend tests cover valid sibling-directory image resolution and escaping-path fallback to text.
 
+36. Desktop-shell smoke testing covers the real open/edit/save/search workflow.
+    Evidence: `e2e-desktop/shell-smoke.mjs` now restores a seeded vault in the real Tauri shell, opens `Desktop Smoke.md` through the real command boundary, edits the CodeMirror Markdown editor, saves through the real save command, verifies the Markdown file on disk, searches for the saved content, and verifies the result inside the desktop shell. The save and AI apply command paths now refresh the SQLite note index after successful writes, and a Rust regression test covers saved-content indexing.
+
 ## Verification
 
-The latest full verification for the local image preview completion point used:
+The latest full verification for the desktop open/edit/save/search workflow completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 34 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 34 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 34 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -132,12 +135,12 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
     The app now streams AI output over the Tauri event boundary, but the OpenAI provider still returns a completed response before the backend emits markdown chunks. True provider-side SSE/token streaming remains future work.
 
 3. Desktop-shell workflow coverage is still narrow.
-    The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore behavior, but it does not yet drive native OS file picker dialogs or the full editing/search/AI workflow inside the desktop shell.
+    The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, and search behavior, but it does not yet drive native OS file picker dialogs or the AI preview/apply workflow inside the desktop shell.
 
 ## Next Priorities
 
 1. Expand desktop-shell workflow coverage.
-   Build on the embedded WebDriver harness to cover opening notes, editing, saving, search, and AI preview flows in the real desktop shell. Native OS file picker automation remains a separate platform-specific concern.
+   Build on the embedded WebDriver harness to cover AI preview/apply flows in the real desktop shell. Native OS file picker automation remains a separate platform-specific concern.
 
 2. Add provider-side OpenAI streaming.
    Connect the Responses API provider to SSE/token streaming so chunks can be emitted as the model produces them instead of after provider completion.

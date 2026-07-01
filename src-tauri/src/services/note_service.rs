@@ -205,22 +205,34 @@ impl NoteService {
     ) -> Result<(), AppError> {
         for node in tree {
             if matches!(node.kind, FileTreeNodeKind::File) {
-                let note = Self::read_note(&vault.path, &node.path)?;
-                database.upsert_note_index(
-                    &Self::note_id(&vault.id, &node.path),
-                    &vault.id,
-                    &node.path,
-                    &Self::title_from_content(&note.content, &node.name),
-                    note.content.len() as i64,
-                    &note.content_hash,
-                    &note.content,
-                )?;
+                Self::index_markdown_note(database, vault, &node.path)?;
             }
 
             Self::index_markdown_tree(database, vault, &node.children)?;
         }
 
         Ok(())
+    }
+
+    pub fn index_markdown_note(
+        database: &Database,
+        vault: &VaultInfo,
+        relative_path: &str,
+    ) -> Result<(), AppError> {
+        let note = Self::read_note(&vault.path, relative_path)?;
+        let fallback_name = Path::new(&note.path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(&note.path);
+        database.upsert_note_index(
+            &Self::note_id(&vault.id, &note.path),
+            &vault.id,
+            &note.path,
+            &Self::title_from_content(&note.content, fallback_name),
+            note.content.len() as i64,
+            &note.content_hash,
+            &note.content,
+        )
     }
 
     fn scan_directory(root: &Path, directory: &Path) -> Result<Vec<FileTreeNode>, AppError> {
@@ -380,6 +392,8 @@ mod tests {
     use std::fs;
 
     use super::NoteService;
+    use crate::domain::vault::VaultInfo;
+    use crate::infrastructure::db::Database;
 
     #[test]
     fn scans_markdown_files_into_tree_and_ignores_other_files() {
@@ -438,6 +452,41 @@ mod tests {
         assert!(!result.content_hash.is_empty());
         assert!(result.snapshot_path.is_some());
         assert!(escaped.is_err());
+
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn indexes_saved_markdown_note_content_for_search() {
+        let root = test_root("index-saved");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("Note.md"), "# Note\n\nOriginal body").unwrap();
+        let vault = VaultInfo {
+            id: "vault:/tmp/index-saved".to_string(),
+            path: root.to_string_lossy().to_string(),
+            name: "index-saved".to_string(),
+            last_opened_at: None,
+        };
+        let database = Database::open_in_memory().unwrap();
+        let base_hash = NoteService::read_note(&root, "Note.md")
+            .unwrap()
+            .content_hash;
+
+        NoteService::save_note(
+            &root,
+            "Note.md",
+            "# Note\n\nSaved searchable marker",
+            &base_hash,
+        )
+        .unwrap();
+        NoteService::index_markdown_note(&database, &vault, "Note.md").unwrap();
+
+        let results = database
+            .search_notes(&vault.id, "searchable")
+            .expect("saved content should be searchable after indexing");
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].path, "Note.md");
 
         fs::remove_dir_all(&root).unwrap();
     }

@@ -9,6 +9,7 @@ use crate::error::AppError;
 use crate::infrastructure::ai::OpenAiResponsesClient;
 use crate::infrastructure::security::SecretStore;
 use crate::services::ai_service::AiService;
+use crate::services::note_service::NoteService;
 use crate::services::settings_service::SettingsService;
 
 #[tauri::command]
@@ -94,7 +95,11 @@ pub async fn apply_ai_change(
     state: State<'_, AppState>,
 ) -> Result<ApplyChangeResult, AppError> {
     let vault = state.active_vault_for_id(&input.vault_id)?;
-    AiService::apply_change(vault.path, input)
+    let result = AiService::apply_change(&vault.path, input)?;
+    state.with_database(|database| {
+        NoteService::index_markdown_note(database, &vault, &result.path)
+    })?;
+    Ok(result)
 }
 
 #[tauri::command]

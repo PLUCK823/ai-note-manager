@@ -10,7 +10,7 @@ import { promisify } from "node:util";
 
 import { remote } from "webdriverio";
 
-/* global document, fetch */
+/* global document, Event, fetch, HTMLElement, HTMLInputElement, InputEvent */
 
 const appBinary = fileURLToPath(
   new URL("../src-tauri/target/debug/ai-note-manager", import.meta.url),
@@ -20,7 +20,7 @@ const port = 4445;
 const testHome = await mkdtemp(join(tmpdir(), "ai-note-manager-desktop-e2e-"));
 const run = promisify(execFile);
 
-await seedRecentVault(testHome);
+const vaultDir = await seedRecentVault(testHome);
 
 const vite = spawn(packageManager, ["frontend:dev", "--host", "127.0.0.1"], {
   stdio: ["ignore", "pipe", "pipe"],
@@ -80,6 +80,38 @@ try {
     assert.match(bodyText, /Open vault/i);
     assert.match(bodyText, /Desktop E2E Vault/i);
     assert.match(bodyText, /Desktop Smoke\.md/i);
+
+    await clickButton(browser, "Desktop Smoke.md");
+    await browser.waitUntil(
+      async () => /Loaded through the real Tauri shell\./i.test(await bodyInnerText(browser)),
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for opened note content" },
+    );
+
+    const updatedContent =
+      "# Desktop Smoke\n\nLoaded through the real Tauri shell.\n\n- Saved from desktop e2e\n";
+    await replaceEditorContent(browser, updatedContent);
+    await browser.waitUntil(
+      async () => /Unsaved/i.test(await bodyInnerText(browser)),
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for dirty save state" },
+    );
+    await clickButton(browser, "Save note");
+    await browser.waitUntil(
+      async () => /Saved/i.test(await bodyInnerText(browser)),
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for saved state" },
+    );
+    assert.equal(
+      await readFile(join(vaultDir, "Desktop Smoke.md"), "utf8"),
+      updatedContent,
+    );
+
+    await setSearchQuery(browser, "Saved");
+    await browser.waitUntil(
+      async () => {
+        const text = await searchResultsText(browser);
+        return /Desktop Smoke/i.test(text) && /Saved from desktop e2e/i.test(text);
+      },
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for search result" },
+    );
   } finally {
     await browser.deleteSession();
   }
@@ -116,6 +148,57 @@ async function bodyInnerText(browser) {
   return browser.execute(() => document.body.innerText);
 }
 
+async function searchResultsText(browser) {
+  return browser.execute(() => {
+    const results = document.querySelector('[aria-label="Search results"]');
+    return results?.textContent ?? "";
+  });
+}
+
+async function clickButton(browser, name) {
+  await browser.execute((buttonName) => {
+    const buttons = Array.from(document.querySelectorAll("button"));
+    const button = buttons.find(
+      (candidate) =>
+        candidate.textContent?.trim() === buttonName ||
+        candidate.getAttribute("aria-label") === buttonName,
+    );
+    if (!button) {
+      throw new Error(`Button not found: ${buttonName}`);
+    }
+    button.click();
+  }, name);
+}
+
+async function replaceEditorContent(browser, content) {
+  await browser.execute((nextContent) => {
+    const editor = document.querySelector('[aria-label="Markdown editor"]');
+    if (!(editor instanceof HTMLElement)) {
+      throw new Error("Markdown editor not found");
+    }
+    editor.focus();
+    document.execCommand("selectAll");
+    document.execCommand("insertText", false, nextContent);
+  }, content);
+}
+
+async function setSearchQuery(browser, query) {
+  await browser.execute((value) => {
+    const input = document.querySelector('[aria-label="Search notes"]');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error("Search input not found");
+    }
+    input.focus();
+    const valueSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    valueSetter?.call(input, value);
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, data: value }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, query);
+}
+
 async function seedRecentVault(home) {
   const vaultDir = join(home, "Desktop E2E Vault");
   await mkdir(vaultDir, { recursive: true });
@@ -147,6 +230,8 @@ INSERT INTO vaults (id, path, name, created_at, updated_at, last_opened_at)
 VALUES ('vault:desktop-e2e', ${vaultPath}, 'Desktop E2E Vault', datetime('now'), datetime('now'), datetime('now'));
 `,
   ]);
+
+  return vaultDir;
 }
 
 function sqlString(value) {
