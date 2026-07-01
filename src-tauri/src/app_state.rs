@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Mutex;
 
 use crate::domain::vault::VaultInfo;
@@ -7,6 +8,7 @@ use crate::infrastructure::fs::VaultWatcher;
 
 pub struct AppState {
     active_vault: Mutex<Option<VaultInfo>>,
+    cancelled_ai_requests: Mutex<HashSet<String>>,
     database: Mutex<Database>,
     vault_watcher: Mutex<Option<VaultWatcher>>,
 }
@@ -15,6 +17,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             active_vault: Mutex::new(None),
+            cancelled_ai_requests: Mutex::new(HashSet::new()),
             database: Mutex::new(
                 Database::open_in_memory().expect("failed to initialize application database"),
             ),
@@ -27,6 +30,7 @@ impl AppState {
     pub fn from_database(database: Database) -> Self {
         Self {
             active_vault: Mutex::new(None),
+            cancelled_ai_requests: Mutex::new(HashSet::new()),
             database: Mutex::new(database),
             vault_watcher: Mutex::new(None),
         }
@@ -71,6 +75,31 @@ impl AppState {
         let mut vault_watcher = self.vault_watcher.lock().map_err(|_| AppError::Unknown)?;
         *vault_watcher = Some(watcher);
         Ok(())
+    }
+
+    pub fn cancel_ai_request(&self, request_id: String) -> Result<(), AppError> {
+        let mut cancelled = self
+            .cancelled_ai_requests
+            .lock()
+            .map_err(|_| AppError::Unknown)?;
+        cancelled.insert(request_id);
+        Ok(())
+    }
+
+    pub fn clear_ai_request(&self, request_id: &str) -> Result<(), AppError> {
+        let mut cancelled = self
+            .cancelled_ai_requests
+            .lock()
+            .map_err(|_| AppError::Unknown)?;
+        cancelled.remove(request_id);
+        Ok(())
+    }
+
+    pub fn is_ai_request_cancelled(&self, request_id: &str) -> bool {
+        self.cancelled_ai_requests
+            .lock()
+            .map(|cancelled| cancelled.contains(request_id))
+            .unwrap_or(true)
     }
 }
 

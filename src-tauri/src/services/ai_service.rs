@@ -7,6 +7,18 @@ use crate::services::note_service::NoteService;
 pub struct AiService;
 
 impl AiService {
+    pub fn request_id(input: &AiRunInput) -> String {
+        format!(
+            "ai-{}",
+            Self::content_fingerprint(&format!(
+                "{:?}:{}:{}",
+                input.action,
+                input.note_content,
+                input.selected_text.as_deref().unwrap_or("")
+            ))
+        )
+    }
+
     pub fn run_action(input: AiRunInput) -> Result<AiRunResult, AppError> {
         let source = input
             .selected_text
@@ -27,7 +39,7 @@ impl AiService {
         };
 
         Ok(AiRunResult {
-            request_id: format!("local-{}", Self::content_fingerprint(source)),
+            request_id: Self::request_id(&input),
             output,
         })
     }
@@ -60,6 +72,27 @@ impl AiService {
             Self::action_instruction(&input.action),
             source.trim()
         )
+    }
+
+    pub fn stream_chunks(output: &str) -> Vec<String> {
+        let mut chunks: Vec<String> = Vec::new();
+
+        for line in output.split_inclusive('\n') {
+            if line.trim().is_empty() {
+                if let Some(previous) = chunks.last_mut() {
+                    previous.push_str(line);
+                } else {
+                    chunks.push(line.to_string());
+                }
+            } else {
+                chunks.push(line.to_string());
+            }
+        }
+
+        if !output.ends_with('\n') && !output.contains('\n') && chunks.is_empty() {
+            chunks.push(output.to_string());
+        }
+        chunks
     }
 
     fn summarize(content: &str) -> String {
@@ -220,6 +253,16 @@ mod tests {
         assert!(provider_input.contains("Summarize the note"));
         assert!(provider_input.contains("# Plan"));
         assert!(provider_input.contains("Ship the MVP."));
+    }
+
+    #[test]
+    fn splits_stream_output_into_markdown_chunks() {
+        let chunks = AiService::stream_chunks("## Summary\n\nShip the MVP.\nNext step.");
+
+        assert_eq!(
+            chunks,
+            vec!["## Summary\n\n", "Ship the MVP.\n", "Next step."]
+        );
     }
 
     fn test_root(name: &str) -> std::path::PathBuf {

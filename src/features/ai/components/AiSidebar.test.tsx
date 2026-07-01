@@ -6,9 +6,43 @@ import { useEditorStore } from "../../editor/editorState";
 import { AiSidebar } from "./AiSidebar";
 
 const runAiActionMock = vi.fn();
+const cancelAiActionMock = vi.fn();
+const eventHandlers = new Map<string, Array<(payload: unknown) => void>>();
 
 vi.mock("../api", () => ({
-  runAiAction: (input: unknown) => runAiActionMock(input),
+  runAiAction: async (input: unknown) => {
+    const result = await runAiActionMock(input);
+    if (result.output) {
+      setTimeout(() => {
+        emitTauriEvent("ai:chunk", {
+          requestId: result.requestId,
+          chunk: result.output,
+        });
+        emitTauriEvent("ai:done", { requestId: result.requestId });
+      }, 0);
+    }
+    return { requestId: result.requestId };
+  },
+  cancelAiAction: (requestId: string) => cancelAiActionMock(requestId),
+}));
+
+vi.mock("../../../shared/lib/tauri", () => ({
+  listenToEvent: (
+    eventName: string,
+    handler: (payload: unknown) => void,
+  ) => {
+    const handlers = eventHandlers.get(eventName) ?? [];
+    handlers.push(handler);
+    eventHandlers.set(eventName, handlers);
+    return Promise.resolve(() => {
+      eventHandlers.set(
+        eventName,
+        (eventHandlers.get(eventName) ?? []).filter(
+          (currentHandler) => currentHandler !== handler,
+        ),
+      );
+    });
+  },
 }));
 
 describe("AiSidebar", () => {
@@ -16,6 +50,9 @@ describe("AiSidebar", () => {
 
   beforeEach(() => {
     runAiActionMock.mockReset();
+    cancelAiActionMock.mockReset();
+    cancelAiActionMock.mockResolvedValue(undefined);
+    eventHandlers.clear();
     writeTextMock.mockReset();
     Object.assign(navigator, {
       clipboard: {
@@ -47,6 +84,62 @@ describe("AiSidebar", () => {
       action: "summarize",
       noteContent: "# Plan\n\nShip the MVP.",
     });
+  });
+
+  it("renders streamed chunks before the AI action is done", async () => {
+    runAiActionMock.mockResolvedValue({
+      requestId: "stream-1",
+    });
+
+    render(<AiSidebar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Summarize" }));
+
+    await waitFor(() => {
+      expect(runAiActionMock).toHaveBeenCalled();
+    });
+    emitTauriEvent("ai:chunk", {
+      requestId: "stream-1",
+      chunk: "## Summary\n\n",
+    });
+    emitTauriEvent("ai:chunk", {
+      requestId: "stream-1",
+      chunk: "Ship the MVP.",
+    });
+
+    expect(await screen.findByText("## Summary")).toBeInTheDocument();
+    expect(screen.getByText("Ship the MVP.")).toBeInTheDocument();
+    expect(screen.getByText("Running AI action...")).toBeInTheDocument();
+
+    emitTauriEvent("ai:done", { requestId: "stream-1" });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Running AI action...")).not.toBeInTheDocument();
+    });
+  });
+
+  it("cancels the active backend AI request", async () => {
+    runAiActionMock.mockResolvedValue({
+      requestId: "stream-cancel",
+    });
+
+    render(<AiSidebar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Summarize" }));
+
+    await screen.findByText("Running AI action...");
+    await waitFor(() => {
+      expect(runAiActionMock).toHaveBeenCalled();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel generation" }));
+
+    expect(cancelAiActionMock).toHaveBeenCalledWith("stream-cancel");
+    emitTauriEvent("ai:chunk", {
+      requestId: "stream-cancel",
+      chunk: "This should not render.",
+    });
+    expect(screen.queryByText("This should not render.")).not.toBeInTheDocument();
   });
 
   it("copies AI output to the clipboard", async () => {
@@ -263,3 +356,9 @@ describe("AiSidebar", () => {
     },
   );
 });
+
+function emitTauriEvent(eventName: string, payload: unknown) {
+  for (const handler of eventHandlers.get(eventName) ?? []) {
+    handler(payload);
+  }
+}

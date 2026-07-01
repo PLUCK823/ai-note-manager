@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 27 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 28 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -87,15 +87,18 @@ This document records the current implementation state of AI Note Manager after 
 27. Markdown preview rendering supports tables, images, and task lists.
     Evidence: `parseMarkdownBlocks` parses pipe tables, http/https image syntax, and checkbox task list items; `MarkdownPreview` renders semantic tables, constrained images, and disabled task checkboxes without unsafe HTML; frontend tests cover table headers/cells, image alt/src, and checked/unchecked task items.
 
+28. AI responses stream through the Tauri event boundary.
+    Evidence: `run_ai_action` now returns a request id immediately and emits `ai:chunk`, `ai:done`, and `ai:error` events; the frontend subscribes to those events, accumulates visible chunks while generation is running, completes write actions through the existing confirmation flow, and calls `cancel_ai_action` so cancelled requests ignore late chunks. Frontend tests cover chunk rendering and cancellation, Rust tests cover stream payload serialization and chunking, and the Playwright smoke test mocks the event boundary for the AI write flow.
+
 ## Verification
 
-The latest full verification for the Markdown preview expansion completion point used:
+The latest full verification for the AI streaming completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 26 frontend tests, 1 Playwright smoke test, 31 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 28 frontend tests, 1 Playwright smoke test, 33 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -104,19 +107,19 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 1. Markdown preview rendering is intentionally lightweight.
    The preview now covers common Markdown blocks, tables, images, and task lists, but it does not yet support footnotes, blockquotes, nested Markdown, local image asset resolution, or full CommonMark edge cases.
 
-2. Streaming AI responses are not implemented.
-    The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
+2. OpenAI provider-side token streaming is not implemented.
+    The app now streams AI output over the Tauri event boundary, but the OpenAI provider still returns a completed response before the backend emits markdown chunks. True provider-side SSE/token streaming remains future work.
 
 3. The Playwright smoke test uses a mocked Tauri boundary.
     The browser smoke test covers the frontend workflow deterministically, but it does not yet launch the packaged Tauri desktop shell against real OS dialogs.
 
 ## Next Priorities
 
-1. Add streaming AI responses.
-   Move long-running AI output from request/response to Tauri events with chunk, done, error, and cancellation semantics.
-
-2. Add desktop-shell end-to-end coverage.
+1. Add desktop-shell end-to-end coverage.
    Extend Playwright coverage to launch the Tauri shell and exercise real filesystem/dialog behavior once the test harness is ready.
 
-3. Continue Markdown preview fidelity improvements.
+2. Continue Markdown preview fidelity improvements.
    Add footnotes, blockquotes, nested Markdown structures, local image resolution, and stricter CommonMark behavior if richer reading mode fidelity becomes important.
+
+3. Add provider-side OpenAI streaming.
+   Connect the Responses API provider to SSE/token streaming so chunks can be emitted as the model produces them instead of after provider completion.

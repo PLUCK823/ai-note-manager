@@ -1,6 +1,7 @@
 import { Clipboard, CornerDownLeft, ListEnd, Square } from "lucide-react";
 
 import { useEditorStore } from "../../editor/editorState";
+import { cancelAiAction } from "../api";
 import { useAiStore } from "../aiState";
 
 export function AiResultPreview() {
@@ -17,6 +18,13 @@ export function AiResultPreview() {
 
   function copyOutput() {
     void navigator.clipboard?.writeText(output);
+  }
+
+  function cancelActiveGeneration() {
+    const requestId = cancelGeneration();
+    if (requestId) {
+      void cancelAiAction(requestId).catch(() => {});
+    }
   }
 
   function insertAtCursor() {
@@ -48,7 +56,7 @@ export function AiResultPreview() {
           <button
             className="ai-tool-button"
             type="button"
-            onClick={cancelGeneration}
+            onClick={cancelActiveGeneration}
           >
             <Square size={13} aria-hidden="true" />
             Cancel generation

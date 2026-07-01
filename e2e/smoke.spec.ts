@@ -12,7 +12,8 @@ test("covers the core note workflow with mocked Tauri commands", async ({
     };
     let content = "# Launch Plan\n\nShip the MVP safely.";
     let contentHash = "hash-initial";
-    const listeners = new Map<number, (event: unknown) => void>();
+    const callbacks = new Map<number, (event: unknown) => void>();
+    const eventListeners = new Map<string, number[]>();
     let nextListenerId = 1;
 
     window.__TAURI_INTERNALS__ = {
@@ -64,19 +65,36 @@ test("covers the core note workflow with mocked Tauri commands", async ({
           ]);
         }
         if (command === "run_ai_action") {
-          return Promise.resolve({
-            requestId: "ai-1",
-            output: "# Launch Plan\n\nShip the MVP with a verified checklist.",
-          });
+          window.setTimeout(() => {
+            emitTauriEvent("ai:chunk", {
+              requestId: "ai-1",
+              chunk: "# Launch Plan\n\nShip the MVP with a verified checklist.",
+            });
+            emitTauriEvent("ai:done", {
+              requestId: "ai-1",
+            });
+          }, 0);
+          return Promise.resolve({ requestId: "ai-1" });
+        }
+        if (command === "cancel_ai_action") {
+          return Promise.resolve();
         }
         if (command === "plugin:event|listen") {
-          const id = nextListenerId;
-          nextListenerId += 1;
-          listeners.set(id, () => {});
-          return Promise.resolve(id);
+          const eventName = String(args?.event);
+          const handlerId = Number(args?.handler);
+          eventListeners.set(eventName, [
+            ...(eventListeners.get(eventName) ?? []),
+            handlerId,
+          ]);
+          return Promise.resolve(handlerId);
         }
         if (command === "plugin:event|unlisten") {
-          listeners.delete(Number(args?.eventId));
+          const eventName = String(args?.event);
+          const eventId = Number(args?.eventId);
+          eventListeners.set(
+            eventName,
+            (eventListeners.get(eventName) ?? []).filter((id) => id !== eventId),
+          );
           return Promise.resolve();
         }
         return Promise.reject(new Error(`Unhandled command: ${command}`));
@@ -84,16 +102,26 @@ test("covers the core note workflow with mocked Tauri commands", async ({
       transformCallback(callback: (event: unknown) => void) {
         const id = nextListenerId;
         nextListenerId += 1;
-        listeners.set(id, callback);
+        callbacks.set(id, callback);
         return id;
       },
       unregisterCallback(id: number) {
-        listeners.delete(id);
+        callbacks.delete(id);
       },
     };
     window.__TAURI_EVENT_PLUGIN_INTERNALS__ = {
       unregisterListener() {},
     };
+
+    function emitTauriEvent(eventName: string, payload: unknown) {
+      for (const callbackId of eventListeners.get(eventName) ?? []) {
+        callbacks.get(callbackId)?.({
+          event: eventName,
+          id: callbackId,
+          payload,
+        });
+      }
+    }
   });
 
   await page.goto("/");
