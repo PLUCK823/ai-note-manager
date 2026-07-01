@@ -28,6 +28,7 @@ pnpm build
 pnpm typecheck
 pnpm lint
 pnpm test
+pnpm e2e
 pnpm rust:fmt
 pnpm rust:lint
 pnpm rust:test

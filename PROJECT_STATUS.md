@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 25 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 26 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -81,15 +81,18 @@ This document records the current implementation state of AI Note Manager after 
 25. Native vault file watching is implemented.
     Evidence: `start_vault_watcher` starts a `notify` recursive watcher for the active vault, `VaultWatcher` emits normalized Markdown file payloads through the `vault:file-changed` Tauri event, `DiskChangeNotice` subscribes to that event instead of polling, invalidates the Markdown file tree query, and checks the active note status only when a matching event arrives.
 
+26. End-to-end smoke testing is implemented.
+    Evidence: `playwright.config.ts` starts the Vite frontend for Playwright, `e2e/smoke.spec.ts` mocks the Tauri command/event boundary and covers opening a vault, opening a note, editing, saving, searching, running an AI write action, and confirming the AI change. `pnpm check` now includes `pnpm e2e` so the smoke test runs with the full verification gate.
+
 ## Verification
 
-The latest full verification for the native vault file watching completion point used:
+The latest full verification for the end-to-end smoke testing completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 25 frontend tests, 31 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 25 frontend tests, 1 Playwright smoke test, 31 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -101,16 +104,16 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Streaming AI responses are not implemented.
     The current AI flow is still request/response, although cancellation ignores late results and all note writes go through confirmation.
 
-3. End-to-end smoke testing is not implemented.
-    The app has unit and component coverage, but it does not yet have Playwright coverage for the full desktop workflow.
+3. The Playwright smoke test uses a mocked Tauri boundary.
+    The browser smoke test covers the frontend workflow deterministically, but it does not yet launch the packaged Tauri desktop shell against real OS dialogs.
 
 ## Next Priorities
 
-1. Add end-to-end smoke testing.
-    Cover selecting a vault, opening a note, editing, saving, searching, running AI, and confirming an AI write.
-
-2. Expand Markdown preview coverage.
+1. Expand Markdown preview coverage.
    Add tables, images, task lists, and stricter CommonMark behavior if users need richer reading mode fidelity.
 
-3. Add streaming AI responses.
+2. Add streaming AI responses.
    Move long-running AI output from request/response to Tauri events with chunk, done, error, and cancellation semantics.
+
+3. Add desktop-shell end-to-end coverage.
+   Extend Playwright coverage to launch the Tauri shell and exercise real filesystem/dialog behavior once the test harness is ready.
