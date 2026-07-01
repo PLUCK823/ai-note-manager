@@ -174,4 +174,33 @@ describe("MarkdownPreview", () => {
     expect(within(nestedList).getByText("Verify desktop smoke")).toBeInTheDocument();
     expect(within(outerList).getByText("Ship build")).toBeInTheDocument();
   });
+
+  it("renders nested ordered lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-6",
+      content: [
+        "# Checklist",
+        "",
+        "1. Prepare release",
+        "   1. Run browser smoke",
+        "   2. Run desktop smoke",
+        "2. Publish",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const outerList = screen.getByRole("list", {
+      name: "Markdown numbered list",
+    });
+    const parentItem = within(outerList).getByText("Prepare release").closest("li");
+    expect(parentItem).not.toBeNull();
+
+    const nestedList = within(parentItem!).getByRole("list", {
+      name: "Markdown nested numbered list",
+    });
+    expect(within(nestedList).getByText("Run browser smoke")).toBeInTheDocument();
+    expect(within(nestedList).getByText("Run desktop smoke")).toBeInTheDocument();
+    expect(within(outerList).getByText("Publish")).toBeInTheDocument();
+  });
 });

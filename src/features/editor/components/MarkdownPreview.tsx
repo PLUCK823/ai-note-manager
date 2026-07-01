@@ -4,7 +4,7 @@ import { parseMarkdownBlocks } from "../markdown";
 import { useEditorStore } from "../editorState";
 
 type MarkdownBlock = ReturnType<typeof parseMarkdownBlocks>[number];
-type UnorderedListBlock = Extract<MarkdownBlock, { type: "unorderedList" }>;
+type ListBlock = Extract<MarkdownBlock, { type: "orderedList" | "unorderedList" }>;
 
 export function MarkdownPreview() {
   const content = useEditorStore((state) => state.content);
@@ -48,7 +48,7 @@ function renderBlock(
         </blockquote>
       );
     case "unorderedList":
-      return renderUnorderedList(block.items, key);
+      return renderList(block.items, key, "unordered");
     case "taskList":
       return (
         <ul key={key} aria-label="Markdown task list" className="markdown-task-list">
@@ -69,13 +69,7 @@ function renderBlock(
         </ul>
       );
     case "orderedList":
-      return (
-        <ol key={key} aria-label="Markdown numbered list">
-          {block.items.map((item, itemIndex) => (
-            <li key={`${key}-${itemIndex}`}>{renderInline(item)}</li>
-          ))}
-        </ol>
-      );
+      return renderList(block.items, key, "ordered");
     case "code":
       return (
         <pre key={key} className="markdown-code-block">
@@ -129,29 +123,33 @@ function renderBlock(
   }
 }
 
-function renderUnorderedList(
-  items: UnorderedListBlock["items"],
+function renderList(
+  items: ListBlock["items"],
   key: string,
+  type: "ordered" | "unordered",
   nested = false,
 ) {
+  const label =
+    type === "ordered"
+      ? nested
+        ? "Markdown nested numbered list"
+        : "Markdown numbered list"
+      : nested
+        ? "Markdown nested bullet list"
+        : "Markdown bullet list";
+  const Tag = type === "ordered" ? "ol" : "ul";
+
   return (
-    <ul
-      key={key}
-      aria-label={nested ? "Markdown nested bullet list" : "Markdown bullet list"}
-    >
+    <Tag key={key} aria-label={label}>
       {items.map((item, itemIndex) => (
         <li key={`${key}-${itemIndex}`}>
           <span>{renderInline(item.text)}</span>
           {item.children.length > 0
-            ? renderUnorderedList(
-                item.children,
-                `${key}-${itemIndex}-nested`,
-                true,
-              )
+            ? renderList(item.children, `${key}-${itemIndex}-nested`, type, true)
             : null}
         </li>
       ))}
-    </ul>
+    </Tag>
   );
 }
 
