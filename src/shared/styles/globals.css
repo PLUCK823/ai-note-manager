@@ -508,9 +508,17 @@ button {
 .markdown-preview-body p,
 .markdown-preview-body ul,
 .markdown-preview-body ol,
+.markdown-preview-body blockquote,
 .markdown-preview-body figure,
 .markdown-code-block {
   margin: 0;
+}
+
+.markdown-preview-body blockquote {
+  border-left: 3px solid rgba(31, 95, 74, 0.36);
+  padding: 8px 12px;
+  color: #46524b;
+  background: rgba(31, 95, 74, 0.06);
 }
 
 .markdown-preview-body ul,

@@ -10,6 +10,7 @@ export function deriveMarkdownTitle(content: string) {
 type MarkdownBlock =
   | { type: "heading"; depth: 1 | 2 | 3; text: string }
   | { type: "paragraph"; text: string }
+  | { type: "blockquote"; text: string }
   | { type: "unorderedList"; items: string[] }
   | { type: "orderedList"; items: string[] }
   | { type: "taskList"; items: Array<{ checked: boolean; text: string }> }
@@ -56,6 +57,20 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         text: heading[2].trim(),
       });
       index += 1;
+      continue;
+    }
+
+    if (/^>\s?/.test(trimmed)) {
+      const quoteLines: string[] = [];
+      while (index < lines.length) {
+        const quote = lines[index]?.trim().match(/^>\s?(.*)$/);
+        if (!quote) {
+          break;
+        }
+        quoteLines.push(quote[1].trim());
+        index += 1;
+      }
+      blocks.push({ type: "blockquote", text: quoteLines.join(" ") });
       continue;
     }
 
@@ -132,6 +147,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         !next ||
         /^```/.test(next) ||
         /^(#{1,3})\s+/.test(next) ||
+        /^>\s?/.test(next) ||
         parseTable(lines, index) ||
         /^!\[[^\]]*\]\(https?:\/\/[^)\s]+\)$/.test(next) ||
         /^[-*]\s+\[[ xX]\]\s+/.test(next) ||

@@ -95,4 +95,29 @@ describe("MarkdownPreview", () => {
       within(taskList).getByLabelText("Package release"),
     ).not.toBeChecked();
   });
+
+  it("renders blockquotes with inline markdown", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-3",
+      content: [
+        "# Research",
+        "",
+        "> Keep the [source](https://example.com/source) visible.",
+        "> Quote the decision context.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const quote = screen.getByRole("blockquote", {
+      name: "Markdown blockquote",
+    });
+    expect(quote).toHaveTextContent(
+      "Keep the source visible. Quote the decision context.",
+    );
+    expect(within(quote).getByRole("link", { name: "source" })).toHaveAttribute(
+      "href",
+      "https://example.com/source",
+    );
+  });
 });

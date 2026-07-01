@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 29 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 30 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -93,22 +93,25 @@ This document records the current implementation state of AI Note Manager after 
 29. Desktop-shell smoke testing is implemented.
     Evidence: `pnpm desktop:e2e` builds the Tauri debug binary with the `wdio` feature, registers `tauri-plugin-wdio-webdriver` only for that feature, starts a real Vite dev server and Tauri desktop process, seeds a temporary HOME with a real Markdown vault and SQLite metadata, connects through embedded WebDriver, and verifies the desktop shell restores the real vault and renders `Desktop Smoke.md`. `pnpm check` now includes `pnpm desktop:e2e`.
 
+30. Markdown preview rendering supports blockquotes.
+    Evidence: `parseMarkdownBlocks` groups consecutive `>` quote lines into blockquote blocks, `MarkdownPreview` renders semantic blockquote elements with inline link support, and frontend tests cover multiline blockquotes with safe http/https links.
+
 ## Verification
 
-The latest full verification for the desktop-shell smoke completion point used:
+The latest full verification for the blockquote preview completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 28 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 29 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, tables, images, and task lists, but it does not yet support footnotes, blockquotes, nested Markdown, local image asset resolution, or full CommonMark edge cases.
+   The preview now covers common Markdown blocks, blockquotes, tables, images, and task lists, but it does not yet support footnotes, nested Markdown, local image asset resolution, or full CommonMark edge cases.
 
 2. OpenAI provider-side token streaming is not implemented.
     The app now streams AI output over the Tauri event boundary, but the OpenAI provider still returns a completed response before the backend emits markdown chunks. True provider-side SSE/token streaming remains future work.
@@ -119,7 +122,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 ## Next Priorities
 
 1. Continue Markdown preview fidelity improvements.
-   Add footnotes, blockquotes, nested Markdown structures, local image resolution, and stricter CommonMark behavior if richer reading mode fidelity becomes important.
+   Add footnotes, nested Markdown structures, local image resolution, and stricter CommonMark behavior if richer reading mode fidelity becomes important.
 
 2. Expand desktop-shell workflow coverage.
    Build on the embedded WebDriver harness to cover opening notes, editing, saving, search, and AI preview flows in the real desktop shell. Native OS file picker automation remains a separate platform-specific concern.

@@ -66,6 +66,16 @@ try {
       { timeout: 10_000, timeoutMsg: "Timed out waiting for Open vault" },
     );
     assert.ok(browser.sessionId, "expected a WebDriver session");
+    await browser.waitUntil(
+      async () => {
+        const bodyText = await bodyInnerText(browser);
+        return (
+          /Desktop E2E Vault/i.test(bodyText) &&
+          /Desktop Smoke\.md/i.test(bodyText)
+        );
+      },
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for restored vault" },
+    );
     const bodyText = await bodyInnerText(browser);
     assert.match(bodyText, /Open vault/i);
     assert.match(bodyText, /Desktop E2E Vault/i);

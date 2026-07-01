@@ -38,6 +38,12 @@ function renderBlock(
       return <h3 key={key}>{renderInline(block.text)}</h3>;
     case "paragraph":
       return <p key={key}>{renderInline(block.text)}</p>;
+    case "blockquote":
+      return (
+        <blockquote key={key} aria-label="Markdown blockquote" role="blockquote">
+          {renderInline(block.text)}
+        </blockquote>
+      );
     case "unorderedList":
       return (
         <ul key={key} aria-label="Markdown bullet list">
