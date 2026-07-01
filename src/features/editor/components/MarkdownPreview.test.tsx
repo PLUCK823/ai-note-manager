@@ -2,10 +2,14 @@ import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { useEditorStore } from "../editorState";
+import { useNotesStore } from "../../notes/hooks";
+import { useVaultStore } from "../../vault/hooks";
 import { MarkdownPreview } from "./MarkdownPreview";
 
 describe("MarkdownPreview", () => {
   beforeEach(() => {
+    useVaultStore.getState().setCurrentVault(null);
+    useNotesStore.getState().setActivePath(null);
     useEditorStore.getState().loadContent({
       baseHash: "hash-1",
       content: [
@@ -94,6 +98,40 @@ describe("MarkdownPreview", () => {
     expect(
       within(taskList).getByLabelText("Package release"),
     ).not.toBeChecked();
+  });
+
+  it("resolves local image paths from the active note without escaping the vault", () => {
+    useVaultStore.getState().setCurrentVault({
+      id: "vault:/Users/test/notes",
+      lastOpenedAt: null,
+      name: "notes",
+      path: "/Users/test/notes",
+    });
+    useNotesStore.getState().setActivePath("projects/launch/Plan.md");
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-local-image",
+      content: [
+        "# Visual Notes",
+        "",
+        "![Launch diagram](../assets/diagram.png)",
+        "",
+        "![Escaping diagram](../../../secrets.png)",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Launch diagram" });
+    expect(image).toHaveAttribute(
+      "src",
+      "asset://localhost/%2FUsers%2Ftest%2Fnotes%2Fprojects%2Fassets%2Fdiagram.png",
+    );
+    expect(
+      screen.queryByRole("img", { name: "Escaping diagram" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("![Escaping diagram](../../../secrets.png)"),
+    ).toBeInTheDocument();
   });
 
   it("renders blockquotes with inline markdown", () => {

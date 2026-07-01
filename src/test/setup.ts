@@ -1,4 +1,7 @@
 import "@testing-library/jest-dom/vitest";
+import { mockConvertFileSrc } from "@tauri-apps/api/mocks";
+
+mockConvertFileSrc("macos");
 
 const emptyRect = {
   bottom: 0,

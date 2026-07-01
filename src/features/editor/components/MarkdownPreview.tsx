@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 import { parseMarkdownBlocks } from "../markdown";
 import { useEditorStore } from "../editorState";
+import { useNotesStore } from "../../notes/hooks";
+import { useVaultStore } from "../../vault/hooks";
 
 type MarkdownBlock = ReturnType<typeof parseMarkdownBlocks>[number];
 type ListBlock = Extract<MarkdownBlock, { type: "orderedList" | "unorderedList" }>;
@@ -9,6 +12,8 @@ type TaskListBlock = Extract<MarkdownBlock, { type: "taskList" }>;
 
 export function MarkdownPreview() {
   const content = useEditorStore((state) => state.content);
+  const currentVault = useVaultStore((state) => state.currentVault);
+  const activePath = useNotesStore((state) => state.activePath);
   const blocks = parseMarkdownBlocks(content);
 
   return (
@@ -16,7 +21,12 @@ export function MarkdownPreview() {
       <p className="eyebrow">Preview</p>
       <div className="markdown-preview-body">
         {blocks.length > 0 ? (
-          blocks.map((block, index) => renderBlock(block, index))
+          blocks.map((block, index) =>
+            renderBlock(block, index, {
+              activePath,
+              vaultPath: currentVault?.path ?? null,
+            }),
+          )
         ) : (
           <p className="preview-empty">Nothing to preview yet.</p>
         )}
@@ -28,6 +38,10 @@ export function MarkdownPreview() {
 function renderBlock(
   block: MarkdownBlock,
   index: number,
+  context: {
+    activePath: string | null;
+    vaultPath: string | null;
+  },
 ) {
   const key = `${block.type}-${index}`;
 
@@ -88,11 +102,18 @@ function renderBlock(
         </div>
       );
     case "image":
-      return (
-        <figure key={key} className="markdown-image">
-          <img alt={block.alt} src={block.src} />
-        </figure>
-      );
+      {
+        const imageSrc = resolveImageSrc(block.src, context);
+        if (!imageSrc) {
+          return <p key={key}>{`![${block.alt}](${block.src})`}</p>;
+        }
+
+        return (
+          <figure key={key} className="markdown-image">
+            <img alt={block.alt} src={imageSrc} />
+          </figure>
+        );
+      }
     case "footnotes":
       return (
         <ol key={key} aria-label="Markdown footnotes" className="markdown-footnotes">
@@ -105,6 +126,60 @@ function renderBlock(
         </ol>
       );
   }
+}
+
+function resolveImageSrc(
+  src: string,
+  context: {
+    activePath: string | null;
+    vaultPath: string | null;
+  },
+) {
+  if (/^https?:\/\/[^\s)]+$/.test(src)) {
+    return src;
+  }
+
+  if (!context.vaultPath || !context.activePath || isAbsolutePath(src)) {
+    return null;
+  }
+
+  const noteDirectory = context.activePath.split("/").slice(0, -1);
+  const resolvedSegments = normalizeVaultSegments([
+    ...noteDirectory,
+    ...src.split("/"),
+  ]);
+  if (!resolvedSegments) {
+    return null;
+  }
+
+  const vaultPath = context.vaultPath.replace(/\/+$/, "");
+  return convertFileSrc(`${vaultPath}/${resolvedSegments.join("/")}`);
+}
+
+function normalizeVaultSegments(segments: string[]) {
+  const normalized: string[] = [];
+
+  for (const segment of segments) {
+    if (!segment || segment === ".") {
+      continue;
+    }
+
+    if (segment === "..") {
+      if (normalized.length === 0) {
+        return null;
+      }
+      normalized.pop();
+      continue;
+    }
+
+    normalized.push(segment);
+  }
+
+  return normalized;
+}
+
+function isAbsolutePath(src: string) {
+  return src.startsWith("/") || /^[A-Za-z]:[\\/]/.test(src);
 }
 
 function renderTaskList(

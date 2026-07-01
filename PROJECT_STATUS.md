@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 34 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 35 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -108,22 +108,25 @@ This document records the current implementation state of AI Note Manager after 
 34. Markdown preview rendering supports nested task lists.
     Evidence: `parseMarkdownBlocks` parses indented `- [ ]` and `- [x]` child task items into recursive task list items, `MarkdownPreview` renders nested task lists under their parent task item, and frontend tests cover nested checked and unchecked task rendering.
 
+35. Markdown preview rendering supports local vault image assets.
+    Evidence: `parseMarkdownBlocks` accepts local image targets, `MarkdownPreview` resolves relative image paths against the active note directory inside the selected vault, uses Tauri `convertFileSrc` for desktop-safe asset URLs, rejects absolute paths and `..` paths that escape the vault, and `tauri.conf.json` enables the asset protocol with a home-directory scope. Frontend tests cover valid sibling-directory image resolution and escaping-path fallback to text.
+
 ## Verification
 
-The latest full verification for the nested task list preview completion point used:
+The latest full verification for the local image preview completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 33 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 34 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, blockquotes, footnotes, nested unordered lists, nested ordered lists, nested task lists, tables, images, and task lists, but it does not yet support local image asset resolution or full CommonMark edge cases.
+   The preview now covers common Markdown blocks, blockquotes, footnotes, nested unordered lists, nested ordered lists, nested task lists, tables, http/https images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. OpenAI provider-side token streaming is not implemented.
     The app now streams AI output over the Tauri event boundary, but the OpenAI provider still returns a completed response before the backend emits markdown chunks. True provider-side SSE/token streaming remains future work.
@@ -133,11 +136,11 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 
 ## Next Priorities
 
-1. Continue Markdown preview fidelity improvements.
-   Add local image resolution and stricter CommonMark behavior if richer reading mode fidelity becomes important.
-
-2. Expand desktop-shell workflow coverage.
+1. Expand desktop-shell workflow coverage.
    Build on the embedded WebDriver harness to cover opening notes, editing, saving, search, and AI preview flows in the real desktop shell. Native OS file picker automation remains a separate platform-specific concern.
 
-3. Add provider-side OpenAI streaming.
+2. Add provider-side OpenAI streaming.
    Connect the Responses API provider to SSE/token streaming so chunks can be emitted as the model produces them instead of after provider completion.
+
+3. Continue Markdown preview fidelity improvements.
+   Add stricter CommonMark behavior if richer reading mode fidelity becomes important.

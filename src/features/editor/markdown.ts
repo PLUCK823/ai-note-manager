@@ -101,7 +101,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const image = trimmed.match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/);
+    const image = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
     if (image) {
       blocks.push({
         type: "image",
@@ -144,7 +144,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         /^(#{1,3})\s+/.test(next) ||
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
-        /^!\[[^\]]*\]\(https?:\/\/[^)\s]+\)$/.test(next) ||
+        /^!\[[^\]]*\]\([^\s)]+\)$/.test(next) ||
         Boolean(parseTaskListItem(lines[index] ?? "")) ||
         Boolean(parseUnorderedListItem(lines[index] ?? "")) ||
         Boolean(parseOrderedListItem(lines[index] ?? ""))
