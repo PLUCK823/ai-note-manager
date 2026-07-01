@@ -29,10 +29,14 @@ pnpm typecheck
 pnpm lint
 pnpm test
 pnpm e2e
+pnpm desktop:e2e
 pnpm rust:fmt
 pnpm rust:lint
 pnpm rust:test
 ```
+
+`pnpm e2e` 是浏览器内的前端 workflow smoke test，会 mock Tauri command/event 边界。
+`pnpm desktop:e2e` 会构建带测试 feature 的 Tauri debug binary，启动真实桌面壳和临时 Vite server，并用 embedded WebDriver 验证真实 vault 恢复与 Markdown 文件树渲染。
 
 ## 目录
 
