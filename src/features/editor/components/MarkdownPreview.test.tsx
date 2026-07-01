@@ -145,4 +145,33 @@ describe("MarkdownPreview", () => {
       within(footnotes).getByText("It protects the real Tauri shell workflow."),
     ).toBeInTheDocument();
   });
+
+  it("renders nested unordered lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-5",
+      content: [
+        "# Outline",
+        "",
+        "- Plan release",
+        "  - Verify browser smoke",
+        "  - Verify desktop smoke",
+        "- Ship build",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const outerList = screen.getByRole("list", {
+      name: "Markdown bullet list",
+    });
+    const parentItem = within(outerList).getByText("Plan release").closest("li");
+    expect(parentItem).not.toBeNull();
+
+    const nestedList = within(parentItem!).getByRole("list", {
+      name: "Markdown nested bullet list",
+    });
+    expect(within(nestedList).getByText("Verify browser smoke")).toBeInTheDocument();
+    expect(within(nestedList).getByText("Verify desktop smoke")).toBeInTheDocument();
+    expect(within(outerList).getByText("Ship build")).toBeInTheDocument();
+  });
 });

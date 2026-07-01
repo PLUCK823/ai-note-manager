@@ -2,7 +2,7 @@
 
 Date: 2026-07-01
 
-This document records the current implementation state of AI Note Manager after the first 31 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 32 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -99,22 +99,25 @@ This document records the current implementation state of AI Note Manager after 
 31. Markdown preview rendering supports footnotes.
     Evidence: `parseMarkdownBlocks` extracts `[^id]: definition` lines into a footnote section and leaves them out of regular paragraphs; `MarkdownPreview` renders `[^id]` inline references as links to semantic footnote list entries; frontend tests cover references, definition extraction, and visible footnote text.
 
+32. Markdown preview rendering supports nested unordered lists.
+    Evidence: `parseMarkdownBlocks` parses indented `-` and `*` child items into recursive unordered list items, `MarkdownPreview` renders nested bullet lists under their parent list item, and frontend tests cover two-level nested list rendering.
+
 ## Verification
 
-The latest full verification for the footnote preview completion point used:
+The latest full verification for the nested list preview completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 30 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 31 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 33 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, blockquotes, footnotes, tables, images, and task lists, but it does not yet support nested Markdown, local image asset resolution, or full CommonMark edge cases.
+   The preview now covers common Markdown blocks, blockquotes, footnotes, nested unordered lists, tables, images, and task lists, but it does not yet support nested ordered/task lists, local image asset resolution, or full CommonMark edge cases.
 
 2. OpenAI provider-side token streaming is not implemented.
     The app now streams AI output over the Tauri event boundary, but the OpenAI provider still returns a completed response before the backend emits markdown chunks. True provider-side SSE/token streaming remains future work.
@@ -125,7 +128,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 ## Next Priorities
 
 1. Continue Markdown preview fidelity improvements.
-   Add nested Markdown structures, local image resolution, and stricter CommonMark behavior if richer reading mode fidelity becomes important.
+   Add nested ordered/task lists, local image resolution, and stricter CommonMark behavior if richer reading mode fidelity becomes important.
 
 2. Expand desktop-shell workflow coverage.
    Build on the embedded WebDriver harness to cover opening notes, editing, saving, search, and AI preview flows in the real desktop shell. Native OS file picker automation remains a separate platform-specific concern.

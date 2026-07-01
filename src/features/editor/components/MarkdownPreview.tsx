@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { parseMarkdownBlocks } from "../markdown";
 import { useEditorStore } from "../editorState";
 
+type MarkdownBlock = ReturnType<typeof parseMarkdownBlocks>[number];
+type UnorderedListBlock = Extract<MarkdownBlock, { type: "unorderedList" }>;
+
 export function MarkdownPreview() {
   const content = useEditorStore((state) => state.content);
   const blocks = parseMarkdownBlocks(content);
@@ -22,7 +25,7 @@ export function MarkdownPreview() {
 }
 
 function renderBlock(
-  block: ReturnType<typeof parseMarkdownBlocks>[number],
+  block: MarkdownBlock,
   index: number,
 ) {
   const key = `${block.type}-${index}`;
@@ -45,13 +48,7 @@ function renderBlock(
         </blockquote>
       );
     case "unorderedList":
-      return (
-        <ul key={key} aria-label="Markdown bullet list">
-          {block.items.map((item, itemIndex) => (
-            <li key={`${key}-${itemIndex}`}>{renderInline(item)}</li>
-          ))}
-        </ul>
-      );
+      return renderUnorderedList(block.items, key);
     case "taskList":
       return (
         <ul key={key} aria-label="Markdown task list" className="markdown-task-list">
@@ -130,6 +127,32 @@ function renderBlock(
         </ol>
       );
   }
+}
+
+function renderUnorderedList(
+  items: UnorderedListBlock["items"],
+  key: string,
+  nested = false,
+) {
+  return (
+    <ul
+      key={key}
+      aria-label={nested ? "Markdown nested bullet list" : "Markdown bullet list"}
+    >
+      {items.map((item, itemIndex) => (
+        <li key={`${key}-${itemIndex}`}>
+          <span>{renderInline(item.text)}</span>
+          {item.children.length > 0
+            ? renderUnorderedList(
+                item.children,
+                `${key}-${itemIndex}-nested`,
+                true,
+              )
+            : null}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function renderInline(text: string): ReactNode[] {

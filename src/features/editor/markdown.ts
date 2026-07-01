@@ -7,11 +7,16 @@ export function deriveMarkdownTitle(content: string) {
   return heading ? heading.replace(/^#\s+/, "") : "Untitled note";
 }
 
+type MarkdownListItem = {
+  children: MarkdownListItem[];
+  text: string;
+};
+
 type MarkdownBlock =
   | { type: "heading"; depth: 1 | 2 | 3; text: string }
   | { type: "paragraph"; text: string }
   | { type: "blockquote"; text: string }
-  | { type: "unorderedList"; items: string[] }
+  | { type: "unorderedList"; items: MarkdownListItem[] }
   | { type: "orderedList"; items: string[] }
   | { type: "taskList"; items: Array<{ checked: boolean; text: string }> }
   | { type: "code"; language: string | null; code: string }
@@ -120,17 +125,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    if (/^[-*]\s+/.test(trimmed)) {
-      const items: string[] = [];
-      while (index < lines.length) {
-        const item = lines[index]?.trim().match(/^[-*]\s+(.+)$/);
-        if (!item) {
-          break;
-        }
-        items.push(item[1].trim());
-        index += 1;
-      }
-      blocks.push({ type: "unorderedList", items });
+    if (parseUnorderedListItem(line)) {
+      const list = parseUnorderedList(lines, index);
+      blocks.push(list.block);
+      index = list.nextIndex;
       continue;
     }
 
@@ -161,7 +159,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         parseTable(lines, index) ||
         /^!\[[^\]]*\]\(https?:\/\/[^)\s]+\)$/.test(next) ||
         /^[-*]\s+\[[ xX]\]\s+/.test(next) ||
-        /^[-*]\s+/.test(next) ||
+        Boolean(parseUnorderedListItem(lines[index] ?? "")) ||
         /^\d+\.\s+/.test(next)
       ) {
         break;
@@ -177,6 +175,56 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function parseUnorderedList(lines: string[], index: number, baseIndent?: number) {
+  const firstItem = parseUnorderedListItem(lines[index] ?? "");
+  const listIndent = baseIndent ?? firstItem?.indent ?? 0;
+  const items: MarkdownListItem[] = [];
+  let currentItem: MarkdownListItem | null = null;
+  let nextIndex = index;
+
+  while (nextIndex < lines.length) {
+    const item = parseUnorderedListItem(lines[nextIndex] ?? "");
+    if (!item || item.indent < listIndent) {
+      break;
+    }
+
+    if (item.indent === listIndent) {
+      currentItem = { children: [], text: item.text };
+      items.push(currentItem);
+      nextIndex += 1;
+      continue;
+    }
+
+    if (!currentItem) {
+      break;
+    }
+
+    const nestedList = parseUnorderedList(lines, nextIndex, item.indent);
+    currentItem.children.push(...nestedList.block.items);
+    nextIndex = nestedList.nextIndex;
+  }
+
+  return {
+    block: {
+      type: "unorderedList" as const,
+      items,
+    },
+    nextIndex,
+  };
+}
+
+function parseUnorderedListItem(line: string) {
+  const item = line.match(/^(\s*)[-*]\s+(.+)$/);
+  if (!item || /^\[[ xX]\]\s+/.test(item[2])) {
+    return null;
+  }
+
+  return {
+    indent: item[1].replace(/\t/g, "  ").length,
+    text: item[2].trim(),
+  };
 }
 
 function parseTable(lines: string[], index: number) {
