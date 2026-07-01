@@ -16,11 +16,13 @@ type MarkdownBlock =
   | { type: "taskList"; items: Array<{ checked: boolean; text: string }> }
   | { type: "code"; language: string | null; code: string }
   | { type: "table"; headers: string[]; rows: string[][] }
-  | { type: "image"; alt: string; src: string };
+  | { type: "image"; alt: string; src: string }
+  | { type: "footnotes"; items: Array<{ id: string; text: string }> };
 
 export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   const lines = stripFrontmatter(content).split("\n");
   const blocks: MarkdownBlock[] = [];
+  const footnotes: Array<{ id: string; text: string }> = [];
   let index = 0;
 
   while (index < lines.length) {
@@ -28,6 +30,13 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     const trimmed = line.trim();
 
     if (!trimmed) {
+      index += 1;
+      continue;
+    }
+
+    const footnote = trimmed.match(/^\[\^([^\]]+)\]:\s+(.+)$/);
+    if (footnote) {
+      footnotes.push({ id: footnote[1].trim(), text: footnote[2].trim() });
       index += 1;
       continue;
     }
@@ -146,6 +155,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       if (
         !next ||
         /^```/.test(next) ||
+        /^\[\^[^\]]+\]:\s+/.test(next) ||
         /^(#{1,3})\s+/.test(next) ||
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
@@ -160,6 +170,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       index += 1;
     }
     blocks.push({ type: "paragraph", text: paragraphLines.join(" ") });
+  }
+
+  if (footnotes.length > 0) {
+    blocks.push({ type: "footnotes", items: footnotes });
   }
 
   return blocks;

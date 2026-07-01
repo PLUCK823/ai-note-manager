@@ -120,4 +120,29 @@ describe("MarkdownPreview", () => {
       "https://example.com/source",
     );
   });
+
+  it("renders footnote references and definitions", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-4",
+      content: [
+        "# Decision",
+        "",
+        "Ship the desktop smoke coverage first.[^priority]",
+        "",
+        "[^priority]: It protects the real Tauri shell workflow.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const footnoteReference = screen.getByRole("link", { name: "priority" });
+    expect(footnoteReference).toHaveAttribute("href", "#footnote-priority");
+    expect(screen.queryByText(/^\[\^priority\]:/)).not.toBeInTheDocument();
+
+    const footnotes = screen.getByRole("list", { name: "Markdown footnotes" });
+    expect(within(footnotes).getByText("priority")).toBeInTheDocument();
+    expect(
+      within(footnotes).getByText("It protects the real Tauri shell workflow."),
+    ).toBeInTheDocument();
+  });
 });

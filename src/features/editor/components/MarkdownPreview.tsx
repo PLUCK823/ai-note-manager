@@ -118,33 +118,53 @@ function renderBlock(
           <img alt={block.alt} src={block.src} />
         </figure>
       );
+    case "footnotes":
+      return (
+        <ol key={key} aria-label="Markdown footnotes" className="markdown-footnotes">
+          {block.items.map((item) => (
+            <li id={`footnote-${item.id}`} key={`${key}-${item.id}`}>
+              <span className="markdown-footnote-id">{item.id}</span>
+              <span>{renderInline(item.text)}</span>
+            </li>
+          ))}
+        </ol>
+      );
   }
 }
 
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  const inlinePattern =
+    /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]/g;
   let lastIndex = 0;
 
   for (
-    let match = linkPattern.exec(text);
+    let match = inlinePattern.exec(text);
     match !== null;
-    match = linkPattern.exec(text)
+    match = inlinePattern.exec(text)
   ) {
     if (match.index > lastIndex) {
       nodes.push(text.slice(lastIndex, match.index));
     }
 
-    nodes.push(
-      <a
-        key={`${match.index}-${match[2]}`}
-        href={match[2]}
-        target="_blank"
-        rel="noreferrer"
-      >
-        {match[1]}
-      </a>,
-    );
+    if (match[3]) {
+      nodes.push(
+        <sup key={`${match.index}-${match[3]}`}>
+          <a href={`#footnote-${match[3]}`}>{match[3]}</a>
+        </sup>,
+      );
+    } else {
+      nodes.push(
+        <a
+          key={`${match.index}-${match[2]}`}
+          href={match[2]}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {match[1]}
+        </a>,
+      );
+    }
     lastIndex = match.index + match[0].length;
   }
 

@@ -526,6 +526,23 @@ button {
   padding-left: 22px;
 }
 
+.markdown-footnotes {
+  border-top: 1px solid rgba(23, 32, 27, 0.12);
+  padding-top: 10px;
+  color: #46524b;
+  font-size: 0.84rem;
+}
+
+.markdown-footnotes li {
+  padding-left: 4px;
+}
+
+.markdown-footnote-id {
+  margin-right: 8px;
+  color: #1f5f4a;
+  font-weight: 800;
+}
+
 .markdown-preview-body li + li {
   margin-top: 4px;
 }
