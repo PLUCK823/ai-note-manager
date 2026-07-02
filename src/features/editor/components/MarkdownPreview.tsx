@@ -108,6 +108,8 @@ function renderBlock(
           </figure>
         );
       }
+    case "thematicBreak":
+      return <hr key={key} aria-label="Markdown thematic break" />;
     case "footnotes":
       return (
         <ol key={key} aria-label="Markdown footnotes" className="markdown-footnotes">

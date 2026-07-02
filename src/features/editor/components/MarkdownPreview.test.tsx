@@ -112,6 +112,41 @@ describe("MarkdownPreview", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders thematic breaks as separators", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-thematic-breaks",
+      content: [
+        "# Release Notes",
+        "",
+        "Ready for verification.",
+        "",
+        "---",
+        "",
+        "Implementation detail.",
+        "",
+        "***",
+        "",
+        "Audit trail.",
+        "",
+        "___",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    expect(
+      screen.getByText("Ready for verification."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Implementation detail.")).toBeInTheDocument();
+    expect(screen.getByText("Audit trail.")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("separator", { name: "Markdown thematic break" }),
+    ).toHaveLength(3);
+    expect(screen.queryByText("---")).not.toBeInTheDocument();
+    expect(screen.queryByText("***")).not.toBeInTheDocument();
+    expect(screen.queryByText("___")).not.toBeInTheDocument();
+  });
+
   it("renders tables, images, and task lists", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-2",

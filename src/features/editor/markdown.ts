@@ -28,6 +28,7 @@ type MarkdownBlock =
   | { type: "code"; language: string | null; code: string }
   | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "image"; alt: string; src: string }
+  | { type: "thematicBreak" }
   | { type: "footnotes"; items: Array<{ id: string; text: string }> };
 
 export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
@@ -48,6 +49,12 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     const footnote = trimmed.match(/^\[\^([^\]]+)\]:\s+(.+)$/);
     if (footnote) {
       footnotes.push({ id: footnote[1].trim(), text: footnote[2].trim() });
+      index += 1;
+      continue;
+    }
+
+    if (isThematicBreak(trimmed)) {
+      blocks.push({ type: "thematicBreak" });
       index += 1;
       continue;
     }
@@ -148,6 +155,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         !next ||
         /^```/.test(next) ||
         /^\[\^[^\]]+\]:\s+/.test(next) ||
+        isThematicBreak(next) ||
         /^(#{1,6})\s+/.test(next) ||
         isSetextHeadingUnderline(next) ||
         /^>\s?/.test(next) ||
@@ -192,6 +200,10 @@ function parseSetextHeading(lines: string[], index: number) {
 
 function isSetextHeadingUnderline(line: string) {
   return /^(=+|-+)\s*$/.test(line);
+}
+
+function isThematicBreak(line: string) {
+  return /^([-*_])(?:\s*\1){2,}$/.test(line);
 }
 
 function parseTaskList(lines: string[], index: number, baseIndent?: number) {
