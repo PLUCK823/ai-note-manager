@@ -33,6 +33,7 @@ type MarkdownBlock =
 
 export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   const lines = stripFrontmatter(content).split("\n");
+  const linkDefinitions = parseLinkDefinitions(lines);
   const blocks: MarkdownBlock[] = [];
   const footnotes: Array<{ id: string; text: string }> = [];
   let index = 0;
@@ -49,6 +50,11 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     const footnote = trimmed.match(/^\[\^([^\]]+)\]:\s+(.+)$/);
     if (footnote) {
       footnotes.push({ id: footnote[1].trim(), text: footnote[2].trim() });
+      index += 1;
+      continue;
+    }
+
+    if (parseLinkDefinition(trimmed)) {
       index += 1;
       continue;
     }
@@ -115,7 +121,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         quoteLines.push(quote[1].trim());
         index += 1;
       }
-      blocks.push({ type: "blockquote", text: quoteLines.join(" ") });
+      blocks.push({
+        type: "blockquote",
+        text: applyReferenceLinks(quoteLines.join(" "), linkDefinitions),
+      });
       continue;
     }
 
@@ -167,6 +176,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         isIndentedCodeLine(lines[index] ?? "") ||
         /^(```|~~~)/.test(next) ||
         /^\[\^[^\]]+\]:\s+/.test(next) ||
+        Boolean(parseLinkDefinition(next)) ||
         isThematicBreak(next) ||
         /^(#{1,6})\s+/.test(next) ||
         isSetextHeadingUnderline(next) ||
@@ -182,7 +192,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       paragraphLines.push(next);
       index += 1;
     }
-    blocks.push({ type: "paragraph", text: paragraphLines.join(" ") });
+    blocks.push({
+      type: "paragraph",
+      text: applyReferenceLinks(paragraphLines.join(" "), linkDefinitions),
+    });
   }
 
   if (footnotes.length > 0) {
@@ -190,6 +203,38 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function parseLinkDefinitions(lines: string[]) {
+  const definitions = new Map<string, string>();
+
+  for (const line of lines) {
+    const definition = parseLinkDefinition(line.trim());
+    if (definition) {
+      definitions.set(definition.id.toLowerCase(), definition.href);
+    }
+  }
+
+  return definitions;
+}
+
+function parseLinkDefinition(line: string) {
+  const definition = line.match(/^\[([^\]^][^\]]*)\]:\s+(https?:\/\/[^\s]+)$/);
+  if (!definition) {
+    return null;
+  }
+
+  return {
+    href: definition[2],
+    id: definition[1].trim(),
+  };
+}
+
+function applyReferenceLinks(text: string, definitions: Map<string, string>) {
+  return text.replace(/\[([^\]]+)\]\[([^\]]+)\]/g, (source, label, id) => {
+    const href = definitions.get(id.trim().toLowerCase());
+    return href ? `[${label}](${href})` : source;
+  });
 }
 
 function parseIndentedCodeBlock(lines: string[], index: number) {
