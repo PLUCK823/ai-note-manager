@@ -264,7 +264,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>/g;
+    /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>/g;
   let lastIndex = 0;
 
   for (
@@ -297,6 +297,12 @@ function renderInline(text: string): ReactNode[] {
           rel="noreferrer"
         >
           {match[7]}
+        </a>,
+      );
+    } else if (match[8]) {
+      nodes.push(
+        <a key={`${match.index}-${match[8]}`} href={`mailto:${match[8]}`}>
+          {match[8]}
         </a>,
       );
     } else {

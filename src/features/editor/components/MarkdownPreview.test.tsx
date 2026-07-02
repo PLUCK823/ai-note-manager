@@ -312,6 +312,23 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByText("<https://example.com/spec>")).not.toBeInTheDocument();
   });
 
+  it("renders email autolinks as mailto links", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-email-autolinks",
+      content: [
+        "# Contacts",
+        "",
+        "Send release notes to <team@example.com>.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const emailLink = screen.getByRole("link", { name: "team@example.com" });
+    expect(emailLink).toHaveAttribute("href", "mailto:team@example.com");
+    expect(screen.queryByText("<team@example.com>")).not.toBeInTheDocument();
+  });
+
   it("renders footnote references and definitions", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-4",
