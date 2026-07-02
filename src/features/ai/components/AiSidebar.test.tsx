@@ -118,6 +118,29 @@ describe("AiSidebar", () => {
     });
   });
 
+  it("accepts streamed chunks that arrive before the action response resolves", async () => {
+    runAiActionMock.mockImplementation(async () => {
+      emitTauriEvent("ai:chunk", {
+        requestId: "early-stream",
+        chunk: "## Draft\n\nShip the MVP with less race risk.",
+      });
+      emitTauriEvent("ai:done", { requestId: "early-stream" });
+      return { requestId: "early-stream" };
+    });
+
+    render(<AiSidebar />);
+
+    await waitFor(() => {
+      expect(eventHandlers.get("ai:chunk")?.length).toBeGreaterThan(0);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Rewrite" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Apply AI change" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("## Draft")).toBeInTheDocument();
+  });
+
   it("cancels the active backend AI request", async () => {
     runAiActionMock.mockResolvedValue({
       requestId: "stream-cancel",

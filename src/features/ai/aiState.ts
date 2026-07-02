@@ -47,14 +47,20 @@ export const useAiStore = create<AiState>((set, get) => ({
   streamContext: null,
   status: "idle",
   appendChunk: (requestId, chunk) =>
-    set((state) =>
-      state.backendRequestId !== requestId
-        ? state
-        : {
-            output: `${state.output}${chunk}`,
-            status: "running",
-          },
-    ),
+    set((state) => {
+      const isExpectedRequest = state.backendRequestId === requestId;
+      const isEarlyRequest =
+        state.status === "running" && state.backendRequestId === null;
+      if (!isExpectedRequest && !isEarlyRequest) {
+        return state;
+      }
+
+      return {
+        backendRequestId: requestId,
+        output: `${state.output}${chunk}`,
+        status: "running",
+      };
+    }),
   cancelGeneration: () => {
     const requestId = get().backendRequestId;
     set((state) => ({

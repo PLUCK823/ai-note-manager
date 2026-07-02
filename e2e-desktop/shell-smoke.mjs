@@ -35,6 +35,7 @@ try {
   app = spawn(appBinary, [], {
     env: {
       ...process.env,
+      AI_NOTE_MANAGER_DISABLE_EXTERNAL_AI: "true",
       HOME: testHome,
       TAURI_WEBDRIVER_PORT: String(port),
       WDIO_EMBEDDED_SERVER: "true",
@@ -112,6 +113,43 @@ try {
       },
       { timeout: 10_000, timeoutMsg: "Timed out waiting for search result" },
     );
+
+    await clickButton(browser, "Rewrite");
+    try {
+      await browser.waitUntil(
+        async () => {
+          const text = await dialogText(browser, "Apply AI change");
+          return /AI proposal/i.test(text) && /## Draft/i.test(text);
+        },
+        { timeout: 10_000, timeoutMsg: "Timed out waiting for AI apply dialog" },
+      );
+    } catch (error) {
+      throw new Error(
+        `${error instanceof Error ? error.message : String(error)}\nAI preview: ${await aiPreviewText(browser)}\nBody: ${await bodyInnerText(browser)}`,
+        { cause: error },
+      );
+    }
+    await clickButton(browser, "Apply change");
+    await browser.waitUntil(
+      async () => {
+        const text = await editorText(browser);
+        return /^## Draft/.test(text) && /Saved from desktop e2e/i.test(text);
+      },
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for applied AI editor content" },
+    );
+    await browser.waitUntil(
+      async () => /Unsaved/i.test(await bodyInnerText(browser)),
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for AI dirty save state" },
+    );
+    await clickButton(browser, "Save note");
+    await browser.waitUntil(
+      async () => /Saved/i.test(await bodyInnerText(browser)),
+      { timeout: 10_000, timeoutMsg: "Timed out waiting for saved AI content" },
+    );
+    assert.match(
+      await readFile(join(vaultDir, "Desktop Smoke.md"), "utf8"),
+      /^## Draft\n\n# Desktop Smoke\n\nLoaded through the real Tauri shell\./,
+    );
   } finally {
     await browser.deleteSession();
   }
@@ -152,6 +190,27 @@ async function searchResultsText(browser) {
   return browser.execute(() => {
     const results = document.querySelector('[aria-label="Search results"]');
     return results?.textContent ?? "";
+  });
+}
+
+async function aiPreviewText(browser) {
+  return browser.execute(() => {
+    const preview = document.querySelector('[aria-label="AI result preview"]');
+    return preview?.textContent ?? "";
+  });
+}
+
+async function dialogText(browser, label) {
+  return browser.execute((dialogLabel) => {
+    const dialog = document.querySelector(`[role="dialog"][aria-label="${dialogLabel}"]`);
+    return dialog?.textContent ?? "";
+  }, label);
+}
+
+async function editorText(browser) {
+  return browser.execute(() => {
+    const editor = document.querySelector('[aria-label="Markdown editor"]');
+    return editor?.textContent ?? "";
   });
 }
 

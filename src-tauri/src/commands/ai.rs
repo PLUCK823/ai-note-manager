@@ -70,6 +70,10 @@ pub async fn run_ai_action(
 }
 
 async fn run_ai_action_output(app: AppHandle, input: AiRunInput) -> Result<String, AppError> {
+    if std::env::var_os("AI_NOTE_MANAGER_DISABLE_EXTERNAL_AI").is_some() {
+        return AiService::run_action(input).map(|result| result.output);
+    }
+
     let app_data_dir = app
         .path()
         .app_data_dir()
