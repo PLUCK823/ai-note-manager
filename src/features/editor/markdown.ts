@@ -72,14 +72,19 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const fence = trimmed.match(/^(```|~~~)\s*(\S*)\s*$/);
+    const fence = trimmed.match(/^(`{3,}|~{3,})\s*(\S*)\s*$/);
     if (fence) {
       const codeLines: string[] = [];
       const closingFence = fence[1];
+      const closingFencePattern = new RegExp(
+        `^${escapeRegExp(closingFence[0]).repeat(closingFence.length)}${escapeRegExp(
+          closingFence[0],
+        )}*\\s*$`,
+      );
       index += 1;
       while (
         index < lines.length &&
-        !lines[index]?.trim().startsWith(closingFence)
+        !closingFencePattern.test(lines[index]?.trim() ?? "")
       ) {
         codeLines.push(lines[index] ?? "");
         index += 1;
@@ -232,6 +237,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function parseLinkDefinitions(lines: string[]) {

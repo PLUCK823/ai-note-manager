@@ -100,6 +100,28 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByText("``` ts")).not.toBeInTheDocument();
   });
 
+  it("renders fenced code blocks with longer fences", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-long-fence-code",
+      content: [
+        "# Build Script",
+        "",
+        "````md",
+        "```",
+        "const inside = true;",
+        "```",
+        "````",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const codeBlock = container.querySelector("pre code");
+    expect(codeBlock).toHaveTextContent("const inside = true;");
+    expect(codeBlock).toHaveTextContent("```");
+    expect(screen.queryByText("````md")).not.toBeInTheDocument();
+  });
+
   it("renders indented code blocks", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-indented-code",
