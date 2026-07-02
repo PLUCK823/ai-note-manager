@@ -502,6 +502,27 @@ describe("MarkdownPreview", () => {
     expect(emphasis).toHaveTextContent("desktop workflow");
   });
 
+  it("renders backslash-escaped punctuation as literal text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-backslash-escaped-punctuation",
+      content: [
+        "# Inline",
+        "",
+        "Show \\*literal asterisks\\* and \\[plain label\\](https://example.com).",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    expect(
+      screen.getByText(
+        "Show *literal asterisks* and [plain label](https://example.com).",
+      ),
+    ).toBeInTheDocument();
+    expect(container.querySelector("p em")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "plain label" })).not.toBeInTheDocument();
+  });
+
   it("renders double-backtick inline code spans", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-double-backtick-inline-code",

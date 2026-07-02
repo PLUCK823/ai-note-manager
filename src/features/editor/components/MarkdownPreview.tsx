@@ -276,7 +276,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
+    /(?<!\\)``([^`]*(?:`[^`]+)*)``|(?<!\\)`([^`]+)`|(?<!\\)\*\*([^*]+)(?<!\\)\*\*|(?<!\\)\*([^*]+)(?<!\\)\*|(?<!\\)\[([^\]]+)(?<!\\)\]\((https?:\/\/[^)\s]+)\)|(?<!\\)\[\^([^\]]+)(?<!\\)\]|(?<!\\)<(https?:\/\/[^>\s]+)>|(?<!\\)<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|(?<!\\)~~([^~]+)(?<!\\)~~|(?<!\\)__([^_]+)(?<!\\)__|(?<!\\)_([^_]+)(?<!\\)_/g;
   let lastIndex = 0;
 
   for (
@@ -348,7 +348,7 @@ function renderInline(text: string): ReactNode[] {
 }
 
 function pushTextWithLineBreaks(nodes: ReactNode[], text: string, keyPrefix: number) {
-  const parts = text.split("\n");
+  const parts = unescapeMarkdownPunctuation(text).split("\n");
 
   parts.forEach((part, index) => {
     if (part) {
@@ -359,4 +359,8 @@ function pushTextWithLineBreaks(nodes: ReactNode[], text: string, keyPrefix: num
       nodes.push(<br key={`${keyPrefix}-br-${index}`} />);
     }
   });
+}
+
+function unescapeMarkdownPunctuation(text: string) {
+  return text.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
 }
