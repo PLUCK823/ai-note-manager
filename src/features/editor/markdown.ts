@@ -59,6 +59,13 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
+    if (isIndentedCodeLine(line)) {
+      const code = parseIndentedCodeBlock(lines, index);
+      blocks.push(code.block);
+      index = code.nextIndex;
+      continue;
+    }
+
     const fence = trimmed.match(/^(```|~~~)\s*(\S*)\s*$/);
     if (fence) {
       const codeLines: string[] = [];
@@ -157,6 +164,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       const next = lines[index]?.trim() ?? "";
       if (
         !next ||
+        isIndentedCodeLine(lines[index] ?? "") ||
         /^(```|~~~)/.test(next) ||
         /^\[\^[^\]]+\]:\s+/.test(next) ||
         isThematicBreak(next) ||
@@ -182,6 +190,29 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function parseIndentedCodeBlock(lines: string[], index: number) {
+  const codeLines: string[] = [];
+  let nextIndex = index;
+
+  while (nextIndex < lines.length && isIndentedCodeLine(lines[nextIndex] ?? "")) {
+    codeLines.push((lines[nextIndex] ?? "").replace(/^( {4}|\t)/, ""));
+    nextIndex += 1;
+  }
+
+  return {
+    block: {
+      type: "code" as const,
+      language: null,
+      code: codeLines.join("\n"),
+    },
+    nextIndex,
+  };
+}
+
+function isIndentedCodeLine(line: string) {
+  return /^( {4}|\t)\S/.test(line);
 }
 
 function normalizeAtxHeadingText(text: string) {

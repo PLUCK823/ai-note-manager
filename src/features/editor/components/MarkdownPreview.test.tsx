@@ -100,6 +100,24 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByText("``` ts")).not.toBeInTheDocument();
   });
 
+  it("renders indented code blocks", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-indented-code",
+      content: [
+        "# Build Script",
+        "",
+        "    const port = 1420;",
+        "    const host = '127.0.0.1';",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const codeBlock = container.querySelector("pre code");
+    expect(codeBlock).toHaveTextContent("const port = 1420;");
+    expect(codeBlock).toHaveTextContent("const host = '127.0.0.1';");
+  });
+
   it("renders heading levels four through six", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-headings",
