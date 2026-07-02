@@ -61,7 +61,7 @@ function renderBlock(
     case "taskList":
       return renderTaskList(block.items, key);
     case "orderedList":
-      return renderList(block.items, key, "ordered");
+      return renderList(block.items, key, "ordered", false, block.start);
     case "code":
       return (
         <pre key={key} className="markdown-code-block">
@@ -236,6 +236,7 @@ function renderList(
   key: string,
   type: "ordered" | "unordered",
   nested = false,
+  start?: number,
 ) {
   const label =
     type === "ordered"
@@ -248,7 +249,7 @@ function renderList(
   const Tag = type === "ordered" ? "ol" : "ul";
 
   return (
-    <Tag key={key} aria-label={label}>
+    <Tag key={key} aria-label={label} start={type === "ordered" ? start : undefined}>
       {items.map((item, itemIndex) => (
         <li key={`${key}-${itemIndex}`}>
           <span>{renderInline(item.text)}</span>

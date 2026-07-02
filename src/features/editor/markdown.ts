@@ -23,7 +23,7 @@ type MarkdownBlock =
   | { type: "paragraph"; text: string }
   | { type: "blockquote"; text: string }
   | { type: "unorderedList"; items: MarkdownListItem[] }
-  | { type: "orderedList"; items: MarkdownListItem[] }
+  | { type: "orderedList"; items: MarkdownListItem[]; start: number }
   | { type: "taskList"; items: MarkdownTaskListItem[] }
   | { type: "code"; language: string | null; code: string }
   | { type: "table"; headers: string[]; rows: string[][] }
@@ -303,7 +303,7 @@ function parseTaskListItem(line: string) {
 function parseList<T extends "orderedList" | "unorderedList">(
   lines: string[],
   index: number,
-  parseItem: (line: string) => { indent: number; text: string } | null,
+  parseItem: (line: string) => { indent: number; marker?: number; text: string } | null,
   type: T,
   baseIndent?: number,
 ) {
@@ -335,9 +335,20 @@ function parseList<T extends "orderedList" | "unorderedList">(
     nextIndex = nestedList.nextIndex;
   }
 
+  if (type === "orderedList") {
+    return {
+      block: {
+        type: "orderedList" as const,
+        items,
+        start: firstItem?.marker ?? 1,
+      },
+      nextIndex,
+    };
+  }
+
   return {
     block: {
-      type,
+      type: "unorderedList" as const,
       items,
     },
     nextIndex,
@@ -364,6 +375,7 @@ function parseOrderedListItem(line: string) {
 
   return {
     indent: item[1].replace(/\t/g, "  ").length,
+    marker: Number(item[0].match(/\d+/)?.[0] ?? 1),
     text: item[2].trim(),
   };
 }
