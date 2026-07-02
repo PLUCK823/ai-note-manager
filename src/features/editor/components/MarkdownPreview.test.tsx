@@ -344,6 +344,23 @@ describe("MarkdownPreview", () => {
     expect(emphasis).toHaveTextContent("desktop workflow");
   });
 
+  it("renders strikethrough text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-strikethrough",
+      content: [
+        "# Inline",
+        "",
+        "Archive the ~~deprecated~~ checklist.",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const deletedText = container.querySelector("p del");
+    expect(deletedText).toHaveTextContent("deprecated");
+    expect(screen.queryByText("~~deprecated~~")).not.toBeInTheDocument();
+  });
+
   it("renders http and https autolinks", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-autolinks",
