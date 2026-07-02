@@ -62,6 +62,27 @@ describe("MarkdownPreview", () => {
     expect(screen.getByText("const ready = true;")).toBeInTheDocument();
   });
 
+  it("renders hard line breaks in paragraphs", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-hard-line-breaks",
+      content: [
+        "# Release Notes",
+        "",
+        "Deploy checklist  ",
+        "Confirm smoke test\\",
+        "Publish notes",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const paragraph = screen.getByText((_, element) => {
+      return element?.tagName === "P" && element.textContent === "Deploy checklistConfirm smoke testPublish notes";
+    });
+    expect(paragraph.querySelectorAll("br")).toHaveLength(2);
+    expect(container).not.toHaveTextContent("Confirm smoke test\\");
+  });
+
   it("renders tilde fenced code blocks", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-tilde-code",

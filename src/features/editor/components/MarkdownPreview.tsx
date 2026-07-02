@@ -274,7 +274,7 @@ function renderInline(text: string): ReactNode[] {
     match = inlinePattern.exec(text)
   ) {
     if (match.index > lastIndex) {
-      nodes.push(text.slice(lastIndex, match.index));
+      pushTextWithLineBreaks(nodes, text.slice(lastIndex, match.index), lastIndex);
     }
 
     if (match[1]) {
@@ -330,8 +330,22 @@ function renderInline(text: string): ReactNode[] {
   }
 
   if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex));
+    pushTextWithLineBreaks(nodes, text.slice(lastIndex), lastIndex);
   }
 
   return nodes;
+}
+
+function pushTextWithLineBreaks(nodes: ReactNode[], text: string, keyPrefix: number) {
+  const parts = text.split("\n");
+
+  parts.forEach((part, index) => {
+    if (part) {
+      nodes.push(part);
+    }
+
+    if (index < parts.length - 1) {
+      nodes.push(<br key={`${keyPrefix}-br-${index}`} />);
+    }
+  });
 }

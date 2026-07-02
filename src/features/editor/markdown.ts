@@ -201,7 +201,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const paragraphLines: string[] = [trimmed];
+    const paragraphLines: string[] = [line];
     index += 1;
     while (index < lines.length) {
       const next = lines[index]?.trim() ?? "";
@@ -223,12 +223,12 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       ) {
         break;
       }
-      paragraphLines.push(next);
+      paragraphLines.push(lines[index] ?? "");
       index += 1;
     }
     blocks.push({
       type: "paragraph",
-      text: applyReferenceLinks(paragraphLines.join(" "), linkDefinitions),
+      text: applyReferenceLinks(joinParagraphLines(paragraphLines), linkDefinitions),
     });
   }
 
@@ -282,6 +282,20 @@ function applyReferenceLinks(text: string, definitions: Map<string, string>) {
       const href = definitions.get(label.trim().toLowerCase());
       return href ? `[${label}](${href})` : source;
     });
+}
+
+function joinParagraphLines(lines: string[]) {
+  return lines.reduce((text, line, index) => {
+    const hardBreak = /(?: {2,}|\\)$/.test(line);
+    const lineText = line.replace(/(?: {2,}|\\)$/, "").trim();
+    const separator = hardBreak ? "\n" : " ";
+
+    if (index === 0) {
+      return `${lineText}${index < lines.length - 1 ? separator : ""}`;
+    }
+
+    return `${text}${lineText}${index < lines.length - 1 ? separator : ""}`;
+  }, "");
 }
 
 function parseIndentedCodeBlock(lines: string[], index: number) {

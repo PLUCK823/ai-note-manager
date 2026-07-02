@@ -2,7 +2,7 @@
 
 Date: 2026-07-02
 
-This document records the current implementation state of AI Note Manager after the first 63 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 64 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -195,22 +195,25 @@ This document records the current implementation state of AI Note Manager after 
 63. Markdown preview rendering supports pipe tables without outer pipes.
     Evidence: `parseMarkdownBlocks` accepts pipe table header, separator, and body rows with or without leading/trailing pipe characters, and `MarkdownPreview` renders them through the existing semantic table renderer. Frontend tests cover a table written without outer pipes.
 
+64. Markdown preview rendering supports hard line breaks in paragraphs.
+    Evidence: `parseMarkdownBlocks` preserves paragraph hard line breaks written with two trailing spaces or a trailing backslash, and `MarkdownPreview` renders those preserved breaks as `<br>` elements without exposing the marker characters. Frontend tests cover both hard line break forms in one paragraph.
+
 ## Verification
 
-The latest full verification for the pipe table without outer pipes completion point used:
+The latest full verification for the hard line break completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 60 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 61 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings and variable-length fences, indented code blocks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, strikethrough text, inline links, full/collapsed/shortcut reference-style links, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, pipe tables with or without outer pipes, http/https images, full/collapsed/shortcut reference-style images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
+   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings and variable-length fences, indented code blocks, paragraph hard line breaks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, strikethrough text, inline links, full/collapsed/shortcut reference-style links, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, pipe tables with or without outer pipes, http/https images, full/collapsed/shortcut reference-style images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.
