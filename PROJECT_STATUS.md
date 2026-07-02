@@ -2,7 +2,7 @@
 
 Date: 2026-07-02
 
-This document records the current implementation state of AI Note Manager after the first 58 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 59 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -180,22 +180,25 @@ This document records the current implementation state of AI Note Manager after 
 58. Markdown preview rendering supports shortcut reference-style links.
     Evidence: `parseMarkdownBlocks` now resolves shortcut references like `[label]` using the matching http/https reference definition id while preserving normal inline links and explicit reference links. Frontend tests cover a shortcut reference-style link and hidden definition line.
 
+59. Markdown preview rendering supports reference-style images.
+    Evidence: `parseMarkdownBlocks` now resolves block image syntax like `![alt][id]` through collected http/https reference definitions and renders the result through the existing safe image renderer while keeping definition lines hidden. Frontend tests cover a reference-style image and hidden definition line.
+
 ## Verification
 
-The latest full verification for the shortcut reference-style link completion point used:
+The latest full verification for the reference-style image completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 55 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 56 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings, indented code blocks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, strikethrough text, inline links, full/collapsed/shortcut reference-style links, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, tables, http/https images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
+   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings, indented code blocks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, strikethrough text, inline links, full/collapsed/shortcut reference-style links, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, tables, http/https images, reference-style images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.

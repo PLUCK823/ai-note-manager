@@ -146,6 +146,20 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
+    const referenceImage = trimmed.match(/^!\[([^\]]*)\]\[([^\]]+)\]$/);
+    if (referenceImage) {
+      const src = linkDefinitions.get(referenceImage[2].trim().toLowerCase());
+      if (src) {
+        blocks.push({
+          type: "image",
+          alt: referenceImage[1].trim(),
+          src,
+        });
+        index += 1;
+        continue;
+      }
+    }
+
     if (parseTaskListItem(line)) {
       const list = parseTaskList(lines, index);
       blocks.push(list.block);
