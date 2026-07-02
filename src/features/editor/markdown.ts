@@ -231,10 +231,15 @@ function parseLinkDefinition(line: string) {
 }
 
 function applyReferenceLinks(text: string, definitions: Map<string, string>) {
-  return text.replace(/\[([^\]]+)\]\[([^\]]+)\]/g, (source, label, id) => {
-    const href = definitions.get(id.trim().toLowerCase());
-    return href ? `[${label}](${href})` : source;
-  });
+  return text
+    .replace(/\[([^\]]+)\]\[([^\]]+)\]/g, (source, label, id) => {
+      const href = definitions.get(id.trim().toLowerCase());
+      return href ? `[${label}](${href})` : source;
+    })
+    .replace(/\[([^\]]+)\]\[\]/g, (source, label) => {
+      const href = definitions.get(label.trim().toLowerCase());
+      return href ? `[${label}](${href})` : source;
+    });
 }
 
 function parseIndentedCodeBlock(lines: string[], index: number) {

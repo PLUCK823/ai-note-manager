@@ -444,6 +444,27 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders collapsed reference-style links", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-collapsed-reference-links",
+      content: [
+        "# References",
+        "",
+        "Review the [Release Spec][] before packaging.",
+        "",
+        "[Release Spec]: https://example.com/release",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const link = screen.getByRole("link", { name: "Release Spec" });
+    expect(link).toHaveAttribute("href", "https://example.com/release");
+    expect(
+      screen.queryByText("[Release Spec]: https://example.com/release"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders email autolinks as mailto links", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-email-autolinks",
