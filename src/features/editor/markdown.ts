@@ -356,7 +356,7 @@ function parseList<T extends "orderedList" | "unorderedList">(
 }
 
 function parseUnorderedListItem(line: string) {
-  const item = line.match(/^(\s*)[-*]\s+(.+)$/);
+  const item = line.match(/^(\s*)[-*+]\s+(.+)$/);
   if (!item || /^\[[ xX]\]\s+/.test(item[2])) {
     return null;
   }

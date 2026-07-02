@@ -439,6 +439,26 @@ describe("MarkdownPreview", () => {
     expect(within(outerList).getByText("Ship build")).toBeInTheDocument();
   });
 
+  it("renders plus-marker unordered lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-plus-list",
+      content: [
+        "# Release Checks",
+        "",
+        "+ Confirm vault restore",
+        "+ Confirm AI preview",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const unorderedList = screen.getByRole("list", {
+      name: "Markdown bullet list",
+    });
+    expect(within(unorderedList).getByText("Confirm vault restore")).toBeInTheDocument();
+    expect(within(unorderedList).getByText("Confirm AI preview")).toBeInTheDocument();
+  });
+
   it("renders nested ordered lists", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-6",
