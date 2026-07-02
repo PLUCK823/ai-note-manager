@@ -459,6 +459,26 @@ describe("MarkdownPreview", () => {
     expect(within(unorderedList).getByText("Confirm AI preview")).toBeInTheDocument();
   });
 
+  it("renders plus-marker task lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-plus-task-list",
+      content: [
+        "# Tasks",
+        "",
+        "+ [x] Restore vault",
+        "+ [ ] Review AI preview",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const taskList = screen.getByRole("list", {
+      name: "Markdown task list",
+    });
+    expect(within(taskList).getByLabelText("Restore vault")).toBeChecked();
+    expect(within(taskList).getByLabelText("Review AI preview")).not.toBeChecked();
+  });
+
   it("renders nested ordered lists", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-6",

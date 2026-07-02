@@ -288,7 +288,7 @@ function parseTaskList(lines: string[], index: number, baseIndent?: number) {
 }
 
 function parseTaskListItem(line: string) {
-  const item = line.match(/^(\s*)[-*]\s+\[([ xX])\]\s+(.+)$/);
+  const item = line.match(/^(\s*)[-*+]\s+\[([ xX])\]\s+(.+)$/);
   if (!item) {
     return null;
   }
