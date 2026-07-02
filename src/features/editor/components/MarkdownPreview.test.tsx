@@ -159,6 +159,27 @@ describe("MarkdownPreview", () => {
     );
   });
 
+  it("renders inline code, bold, and italic text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline",
+      content: [
+        "# Inline",
+        "",
+        "Use `pnpm check` before **shipping** the *desktop workflow*.",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const code = container.querySelector("p code");
+    const strong = container.querySelector("p strong");
+    const emphasis = container.querySelector("p em");
+
+    expect(code).toHaveTextContent("pnpm check");
+    expect(strong).toHaveTextContent("shipping");
+    expect(emphasis).toHaveTextContent("desktop workflow");
+  });
+
   it("renders footnote references and definitions", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-4",

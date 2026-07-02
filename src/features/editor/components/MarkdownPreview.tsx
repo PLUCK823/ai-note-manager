@@ -247,7 +247,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]/g;
+    /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]/g;
   let lastIndex = 0;
 
   for (
@@ -259,21 +259,27 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(text.slice(lastIndex, match.index));
     }
 
-    if (match[3]) {
+    if (match[1]) {
+      nodes.push(<code key={`${match.index}-code`}>{match[1]}</code>);
+    } else if (match[2]) {
+      nodes.push(<strong key={`${match.index}-strong`}>{match[2]}</strong>);
+    } else if (match[3]) {
+      nodes.push(<em key={`${match.index}-em`}>{match[3]}</em>);
+    } else if (match[6]) {
       nodes.push(
-        <sup key={`${match.index}-${match[3]}`}>
-          <a href={`#footnote-${match[3]}`}>{match[3]}</a>
+        <sup key={`${match.index}-${match[6]}`}>
+          <a href={`#footnote-${match[6]}`}>{match[6]}</a>
         </sup>,
       );
     } else {
       nodes.push(
         <a
-          key={`${match.index}-${match[2]}`}
-          href={match[2]}
+          key={`${match.index}-${match[5]}`}
+          href={match[5]}
           target="_blank"
           rel="noreferrer"
         >
-          {match[1]}
+          {match[4]}
         </a>,
       );
     }
