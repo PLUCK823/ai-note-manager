@@ -90,6 +90,29 @@ describe("MarkdownPreview", () => {
     ).toBeInTheDocument();
   });
 
+  it("omits closing hash sequences from ATX heading text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-atx-closing-sequence",
+      content: [
+        "## Release Scope ##",
+        "",
+        "### Verification Notes ###   ",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    expect(
+      screen.getByRole("heading", { name: "Release Scope", level: 2 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Verification Notes", level: 3 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Release Scope ##", level: 2 }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders setext headings as level one and two headings", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-setext-headings",

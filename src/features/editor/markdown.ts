@@ -81,7 +81,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       blocks.push({
         type: "heading",
         depth: heading[1].length as 1 | 2 | 3 | 4 | 5 | 6,
-        text: heading[2].trim(),
+        text: normalizeAtxHeadingText(heading[2]),
       });
       index += 1;
       continue;
@@ -178,6 +178,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function normalizeAtxHeadingText(text: string) {
+  return text.trim().replace(/\s+#+\s*$/, "").trim();
 }
 
 function parseSetextHeading(lines: string[], index: number) {
