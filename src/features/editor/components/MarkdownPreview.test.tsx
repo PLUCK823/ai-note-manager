@@ -288,6 +288,30 @@ describe("MarkdownPreview", () => {
     expect(emphasis).toHaveTextContent("desktop workflow");
   });
 
+  it("renders http and https autolinks", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-autolinks",
+      content: [
+        "# References",
+        "",
+        "Read <https://example.com/spec> and <http://example.com/archive>.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const secureLink = screen.getByRole("link", {
+      name: "https://example.com/spec",
+    });
+    expect(secureLink).toHaveAttribute("href", "https://example.com/spec");
+
+    const plainLink = screen.getByRole("link", {
+      name: "http://example.com/archive",
+    });
+    expect(plainLink).toHaveAttribute("href", "http://example.com/archive");
+    expect(screen.queryByText("<https://example.com/spec>")).not.toBeInTheDocument();
+  });
+
   it("renders footnote references and definitions", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-4",

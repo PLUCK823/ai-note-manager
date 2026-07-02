@@ -264,7 +264,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]/g;
+    /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>/g;
   let lastIndex = 0;
 
   for (
@@ -287,6 +287,17 @@ function renderInline(text: string): ReactNode[] {
         <sup key={`${match.index}-${match[6]}`}>
           <a href={`#footnote-${match[6]}`}>{match[6]}</a>
         </sup>,
+      );
+    } else if (match[7]) {
+      nodes.push(
+        <a
+          key={`${match.index}-${match[7]}`}
+          href={match[7]}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {match[7]}
+        </a>,
       );
     } else {
       nodes.push(
