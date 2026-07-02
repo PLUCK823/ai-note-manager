@@ -330,6 +330,35 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByText("Area | Status")).not.toBeInTheDocument();
   });
 
+  it("renders table column alignment markers", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-table-column-alignment",
+      content: [
+        "# Release Notes",
+        "",
+        "| Area | Owner | Status |",
+        "| :--- | :---: | ---: |",
+        "| Editor | Core | Ready |",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const table = screen.getByRole("table", { name: "Markdown table" });
+    expect(within(table).getByRole("columnheader", { name: "Area" })).toHaveStyle({
+      textAlign: "left",
+    });
+    expect(within(table).getByRole("columnheader", { name: "Owner" })).toHaveStyle({
+      textAlign: "center",
+    });
+    expect(within(table).getByRole("columnheader", { name: "Status" })).toHaveStyle({
+      textAlign: "right",
+    });
+    expect(within(table).getByRole("cell", { name: "Core" })).toHaveStyle({
+      textAlign: "center",
+    });
+  });
+
   it("resolves local image paths from the active note without escaping the vault", () => {
     useVaultStore.getState().setCurrentVault({
       id: "vault:/Users/test/notes",

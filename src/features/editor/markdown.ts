@@ -18,6 +18,8 @@ type MarkdownTaskListItem = {
   text: string;
 };
 
+type MarkdownTableAlignment = "left" | "center" | "right" | null;
+
 type MarkdownBlock =
   | { type: "heading"; depth: 1 | 2 | 3 | 4 | 5 | 6; text: string }
   | { type: "paragraph"; text: string }
@@ -26,7 +28,12 @@ type MarkdownBlock =
   | { type: "orderedList"; items: MarkdownListItem[]; start: number }
   | { type: "taskList"; items: MarkdownTaskListItem[] }
   | { type: "code"; language: string | null; code: string }
-  | { type: "table"; headers: string[]; rows: string[][] }
+  | {
+      type: "table";
+      alignments: MarkdownTableAlignment[];
+      headers: string[];
+      rows: string[][];
+    }
   | { type: "image"; alt: string; src: string }
   | { type: "thematicBreak" }
   | { type: "footnotes"; items: Array<{ id: string; text: string }> };
@@ -495,6 +502,7 @@ function parseTable(lines: string[], index: number) {
   }
 
   const headers = splitTableRow(header);
+  const alignments = splitTableRow(separator).map(parseTableAlignment);
   const rows: string[][] = [];
   let nextIndex = index + 2;
 
@@ -506,6 +514,7 @@ function parseTable(lines: string[], index: number) {
   return {
     block: {
       type: "table" as const,
+      alignments,
       headers,
       rows,
     },
@@ -519,6 +528,25 @@ function isTableRow(line: string) {
 
 function isTableSeparator(line: string) {
   return isTableRow(line) && splitTableRow(line).every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function parseTableAlignment(cell: string): MarkdownTableAlignment {
+  const startsWithColon = cell.startsWith(":");
+  const endsWithColon = cell.endsWith(":");
+
+  if (startsWithColon && endsWithColon) {
+    return "center";
+  }
+
+  if (startsWithColon) {
+    return "left";
+  }
+
+  if (endsWithColon) {
+    return "right";
+  }
+
+  return null;
 }
 
 function splitTableRow(line: string) {

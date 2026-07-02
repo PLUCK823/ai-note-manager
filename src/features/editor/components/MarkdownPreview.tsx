@@ -75,7 +75,11 @@ function renderBlock(
             <thead>
               <tr>
                 {block.headers.map((header, headerIndex) => (
-                  <th key={`${key}-header-${headerIndex}`} scope="col">
+                  <th
+                    key={`${key}-header-${headerIndex}`}
+                    scope="col"
+                    style={tableCellStyle(block.alignments[headerIndex])}
+                  >
                     {renderInline(header)}
                   </th>
                 ))}
@@ -85,7 +89,10 @@ function renderBlock(
               {block.rows.map((row, rowIndex) => (
                 <tr key={`${key}-row-${rowIndex}`}>
                   {block.headers.map((_, cellIndex) => (
-                    <td key={`${key}-cell-${rowIndex}-${cellIndex}`}>
+                    <td
+                      key={`${key}-cell-${rowIndex}-${cellIndex}`}
+                      style={tableCellStyle(block.alignments[cellIndex])}
+                    >
                       {renderInline(row[cellIndex] ?? "")}
                     </td>
                   ))}
@@ -122,6 +129,10 @@ function renderBlock(
         </ol>
       );
   }
+}
+
+function tableCellStyle(alignment: "left" | "center" | "right" | null | undefined) {
+  return alignment ? { textAlign: alignment } : undefined;
 }
 
 function renderHeading(
