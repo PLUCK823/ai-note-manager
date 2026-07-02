@@ -90,6 +90,28 @@ describe("MarkdownPreview", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders setext headings as level one and two headings", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-setext-headings",
+      content: [
+        "Release Plan",
+        "============",
+        "",
+        "Verification Notes",
+        "------------------",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    expect(
+      screen.getByRole("heading", { name: "Release Plan", level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Verification Notes", level: 2 }),
+    ).toBeInTheDocument();
+  });
+
   it("renders tables, images, and task lists", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-2",

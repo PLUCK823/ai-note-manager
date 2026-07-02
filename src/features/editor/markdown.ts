@@ -80,6 +80,13 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
+    const setextHeading = parseSetextHeading(lines, index);
+    if (setextHeading) {
+      blocks.push(setextHeading.block);
+      index = setextHeading.nextIndex;
+      continue;
+    }
+
     if (/^>\s?/.test(trimmed)) {
       const quoteLines: string[] = [];
       while (index < lines.length) {
@@ -142,6 +149,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         /^```/.test(next) ||
         /^\[\^[^\]]+\]:\s+/.test(next) ||
         /^(#{1,6})\s+/.test(next) ||
+        isSetextHeadingUnderline(next) ||
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
         /^!\[[^\]]*\]\([^\s)]+\)$/.test(next) ||
@@ -162,6 +170,28 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   }
 
   return blocks;
+}
+
+function parseSetextHeading(lines: string[], index: number) {
+  const text = lines[index]?.trim() ?? "";
+  const underline = lines[index + 1]?.trim() ?? "";
+
+  if (!text || !isSetextHeadingUnderline(underline)) {
+    return null;
+  }
+
+  return {
+    block: {
+      type: "heading" as const,
+      depth: (underline.startsWith("=") ? 1 : 2) as 1 | 2,
+      text,
+    },
+    nextIndex: index + 2,
+  };
+}
+
+function isSetextHeadingUnderline(line: string) {
+  return /^(=+|-+)\s*$/.test(line);
 }
 
 function parseTaskList(lines: string[], index: number, baseIndent?: number) {
