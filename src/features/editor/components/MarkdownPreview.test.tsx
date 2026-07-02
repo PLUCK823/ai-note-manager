@@ -62,6 +62,34 @@ describe("MarkdownPreview", () => {
     expect(screen.getByText("const ready = true;")).toBeInTheDocument();
   });
 
+  it("renders heading levels four through six", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-headings",
+      content: [
+        "#### Implementation Detail",
+        "",
+        "##### Verification Detail",
+        "",
+        "###### Trace Detail",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Implementation Detail",
+        level: 4,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Verification Detail", level: 5 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Trace Detail", level: 6 }),
+    ).toBeInTheDocument();
+  });
+
   it("renders tables, images, and task lists", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-2",

@@ -47,13 +47,7 @@ function renderBlock(
 
   switch (block.type) {
     case "heading":
-      if (block.depth === 1) {
-        return <h1 key={key}>{renderInline(block.text)}</h1>;
-      }
-      if (block.depth === 2) {
-        return <h2 key={key}>{renderInline(block.text)}</h2>;
-      }
-      return <h3 key={key}>{renderInline(block.text)}</h3>;
+      return renderHeading(block.depth, block.text, key);
     case "paragraph":
       return <p key={key}>{renderInline(block.text)}</p>;
     case "blockquote":
@@ -125,6 +119,27 @@ function renderBlock(
           ))}
         </ol>
       );
+  }
+}
+
+function renderHeading(
+  depth: Extract<MarkdownBlock, { type: "heading" }>["depth"],
+  text: string,
+  key: string,
+) {
+  switch (depth) {
+    case 1:
+      return <h1 key={key}>{renderInline(text)}</h1>;
+    case 2:
+      return <h2 key={key}>{renderInline(text)}</h2>;
+    case 3:
+      return <h3 key={key}>{renderInline(text)}</h3>;
+    case 4:
+      return <h4 key={key}>{renderInline(text)}</h4>;
+    case 5:
+      return <h5 key={key}>{renderInline(text)}</h5>;
+    case 6:
+      return <h6 key={key}>{renderInline(text)}</h6>;
   }
 }
 

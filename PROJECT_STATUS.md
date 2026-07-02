@@ -2,7 +2,7 @@
 
 Date: 2026-07-02
 
-This document records the current implementation state of AI Note Manager after the first 39 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 40 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -123,22 +123,25 @@ This document records the current implementation state of AI Note Manager after 
 39. Markdown preview rendering supports common inline formatting.
     Evidence: `MarkdownPreview` now renders inline code spans, bold text, and italic text as semantic `code`, `strong`, and `em` elements while preserving existing inline link and footnote rendering. Frontend tests cover inline code, bold, and italic rendering in paragraphs.
 
+40. Markdown preview rendering supports all ATX heading levels.
+    Evidence: `parseMarkdownBlocks` now accepts heading markers from `#` through `######`, `MarkdownPreview` renders semantic `h1` through `h6` elements, and frontend tests cover heading levels four, five, and six.
+
 ## Verification
 
-The latest full verification for the inline Markdown formatting completion point used:
+The latest full verification for the ATX heading level completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 36 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 37 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, common inline formatting, blockquotes, footnotes, nested unordered lists, nested ordered lists, nested task lists, tables, http/https images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
+   The preview now covers common Markdown blocks, heading levels 1-6, common inline formatting, blockquotes, footnotes, nested unordered lists, nested ordered lists, nested task lists, tables, http/https images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.

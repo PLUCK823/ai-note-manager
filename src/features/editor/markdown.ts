@@ -19,7 +19,7 @@ type MarkdownTaskListItem = {
 };
 
 type MarkdownBlock =
-  | { type: "heading"; depth: 1 | 2 | 3; text: string }
+  | { type: "heading"; depth: 1 | 2 | 3 | 4 | 5 | 6; text: string }
   | { type: "paragraph"; text: string }
   | { type: "blockquote"; text: string }
   | { type: "unorderedList"; items: MarkdownListItem[] }
@@ -69,11 +69,11 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const heading = trimmed.match(/^(#{1,3})\s+(.+)$/);
+    const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (heading) {
       blocks.push({
         type: "heading",
-        depth: heading[1].length as 1 | 2 | 3,
+        depth: heading[1].length as 1 | 2 | 3 | 4 | 5 | 6,
         text: heading[2].trim(),
       });
       index += 1;
@@ -141,7 +141,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         !next ||
         /^```/.test(next) ||
         /^\[\^[^\]]+\]:\s+/.test(next) ||
-        /^(#{1,3})\s+/.test(next) ||
+        /^(#{1,6})\s+/.test(next) ||
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
         /^!\[[^\]]*\]\([^\s)]+\)$/.test(next) ||
