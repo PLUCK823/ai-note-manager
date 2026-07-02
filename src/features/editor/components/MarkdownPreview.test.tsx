@@ -344,6 +344,27 @@ describe("MarkdownPreview", () => {
     expect(emphasis).toHaveTextContent("desktop workflow");
   });
 
+  it("renders underscore bold and italic text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-underscore-inline",
+      content: [
+        "# Inline",
+        "",
+        "Review __release notes__ before _vault restore_.",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const strong = container.querySelector("p strong");
+    const emphasis = container.querySelector("p em");
+
+    expect(strong).toHaveTextContent("release notes");
+    expect(emphasis).toHaveTextContent("vault restore");
+    expect(screen.queryByText("__release notes__")).not.toBeInTheDocument();
+    expect(screen.queryByText("_vault restore_")).not.toBeInTheDocument();
+  });
+
   it("renders strikethrough text", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-strikethrough",
