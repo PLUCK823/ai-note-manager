@@ -239,6 +239,10 @@ function applyReferenceLinks(text: string, definitions: Map<string, string>) {
     .replace(/\[([^\]]+)\]\[\]/g, (source, label) => {
       const href = definitions.get(label.trim().toLowerCase());
       return href ? `[${label}](${href})` : source;
+    })
+    .replace(/\[([^\]]+)\](?![[(])/g, (source, label) => {
+      const href = definitions.get(label.trim().toLowerCase());
+      return href ? `[${label}](${href})` : source;
     });
 }
 
