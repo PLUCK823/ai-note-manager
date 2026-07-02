@@ -59,18 +59,22 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const fence = trimmed.match(/^```(\S*)\s*$/);
+    const fence = trimmed.match(/^(```|~~~)(\S*)\s*$/);
     if (fence) {
       const codeLines: string[] = [];
+      const closingFence = fence[1];
       index += 1;
-      while (index < lines.length && !lines[index]?.trim().startsWith("```")) {
+      while (
+        index < lines.length &&
+        !lines[index]?.trim().startsWith(closingFence)
+      ) {
         codeLines.push(lines[index] ?? "");
         index += 1;
       }
       index += 1;
       blocks.push({
         type: "code",
-        language: fence[1] || null,
+        language: fence[2] || null,
         code: codeLines.join("\n"),
       });
       continue;
@@ -153,7 +157,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       const next = lines[index]?.trim() ?? "";
       if (
         !next ||
-        /^```/.test(next) ||
+        /^(```|~~~)/.test(next) ||
         /^\[\^[^\]]+\]:\s+/.test(next) ||
         isThematicBreak(next) ||
         /^(#{1,6})\s+/.test(next) ||

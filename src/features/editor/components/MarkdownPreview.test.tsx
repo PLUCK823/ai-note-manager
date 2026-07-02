@@ -62,6 +62,25 @@ describe("MarkdownPreview", () => {
     expect(screen.getByText("const ready = true;")).toBeInTheDocument();
   });
 
+  it("renders tilde fenced code blocks", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-tilde-code",
+      content: [
+        "# Build Script",
+        "",
+        "~~~ts",
+        "const target = 'desktop';",
+        "~~~",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const codeBlock = container.querySelector("pre code");
+    expect(codeBlock).toHaveTextContent("const target = 'desktop';");
+    expect(screen.queryByText("~~~ts")).not.toBeInTheDocument();
+  });
+
   it("renders heading levels four through six", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-headings",
