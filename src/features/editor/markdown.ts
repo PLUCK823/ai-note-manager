@@ -500,7 +500,7 @@ function parseTable(lines: string[], index: number) {
 }
 
 function isTableRow(line: string) {
-  return line.startsWith("|") && line.endsWith("|") && splitTableRow(line).length > 1;
+  return line.includes("|") && splitTableRow(line).length > 1;
 }
 
 function isTableSeparator(line: string) {

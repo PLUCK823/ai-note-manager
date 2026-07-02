@@ -286,6 +286,29 @@ describe("MarkdownPreview", () => {
     ).not.toBeChecked();
   });
 
+  it("renders pipe tables without outer pipes", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-table-without-outer-pipes",
+      content: [
+        "# Release Notes",
+        "",
+        "Area | Status",
+        "--- | ---",
+        "Editor | Ready",
+        "Search | Watching",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const table = screen.getByRole("table", { name: "Markdown table" });
+    expect(within(table).getByRole("columnheader", { name: "Area" }));
+    expect(within(table).getByRole("columnheader", { name: "Status" }));
+    expect(within(table).getByRole("cell", { name: "Editor" }));
+    expect(within(table).getByRole("cell", { name: "Watching" }));
+    expect(screen.queryByText("Area | Status")).not.toBeInTheDocument();
+  });
+
   it("resolves local image paths from the active note without escaping the vault", () => {
     useVaultStore.getState().setCurrentVault({
       id: "vault:/Users/test/notes",
