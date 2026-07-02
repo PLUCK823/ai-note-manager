@@ -368,7 +368,7 @@ function parseUnorderedListItem(line: string) {
 }
 
 function parseOrderedListItem(line: string) {
-  const item = line.match(/^(\s*)\d+\.\s+(.+)$/);
+  const item = line.match(/^(\s*)\d+[.)]\s+(.+)$/);
   if (!item) {
     return null;
   }

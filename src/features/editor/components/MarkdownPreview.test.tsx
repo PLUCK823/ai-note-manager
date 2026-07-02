@@ -529,6 +529,27 @@ describe("MarkdownPreview", () => {
     expect(within(orderedList).getByText("Publish build")).toBeInTheDocument();
   });
 
+  it("renders parenthesized ordered lists", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-parenthesized-ordered-list",
+      content: [
+        "# Release",
+        "",
+        "3) Verify desktop shell",
+        "4) Publish build",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const orderedList = screen.getByRole("list", {
+      name: "Markdown numbered list",
+    });
+    expect(orderedList).toHaveAttribute("start", "3");
+    expect(within(orderedList).getByText("Verify desktop shell")).toBeInTheDocument();
+    expect(within(orderedList).getByText("Publish build")).toBeInTheDocument();
+  });
+
   it("renders nested task lists", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-7",
