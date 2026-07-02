@@ -146,9 +146,10 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const referenceImage = trimmed.match(/^!\[([^\]]*)\]\[([^\]]+)\]$/);
+    const referenceImage = trimmed.match(/^!\[([^\]]*)\]\[([^\]]*)\]$/);
     if (referenceImage) {
-      const src = linkDefinitions.get(referenceImage[2].trim().toLowerCase());
+      const referenceId = referenceImage[2].trim() || referenceImage[1].trim();
+      const src = linkDefinitions.get(referenceId.toLowerCase());
       if (src) {
         blocks.push({
           type: "image",
