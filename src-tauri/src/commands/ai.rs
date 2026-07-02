@@ -25,23 +25,10 @@ pub async fn run_ai_action(
 
     tauri::async_runtime::spawn(async move {
         tokio::task::yield_now().await;
-        let result = run_ai_action_output(stream_app.clone(), input).await;
+        let result =
+            run_ai_action_stream(stream_app.clone(), input, stream_request_id.clone()).await;
         match result {
-            Ok(output) => {
-                for chunk in AiService::stream_chunks(&output) {
-                    if is_cancelled(&stream_app, &stream_request_id) {
-                        return;
-                    }
-                    let _ = stream_app.emit(
-                        "ai:chunk",
-                        AiStreamChunk {
-                            request_id: stream_request_id.clone(),
-                            chunk,
-                        },
-                    );
-                    tokio::task::yield_now().await;
-                }
-
+            Ok(()) => {
                 if !is_cancelled(&stream_app, &stream_request_id) {
                     let _ = stream_app.emit(
                         "ai:done",
@@ -54,6 +41,7 @@ pub async fn run_ai_action(
                     .state::<AppState>()
                     .clear_ai_request(&stream_request_id);
             }
+            Err(AppError::AiCancelled) => {}
             Err(error) => {
                 let _ = stream_app.emit(
                     "ai:error",
@@ -69,9 +57,14 @@ pub async fn run_ai_action(
     Ok(AiStreamStarted { request_id })
 }
 
-async fn run_ai_action_output(app: AppHandle, input: AiRunInput) -> Result<String, AppError> {
+async fn run_ai_action_stream(
+    app: AppHandle,
+    input: AiRunInput,
+    request_id: String,
+) -> Result<(), AppError> {
     if std::env::var_os("AI_NOTE_MANAGER_DISABLE_EXTERNAL_AI").is_some() {
-        return AiService::run_action(input).map(|result| result.output);
+        let output = AiService::run_action(input).map(|result| result.output)?;
+        return emit_local_ai_chunks(&app, &request_id, &output).await;
     }
 
     let app_data_dir = app
@@ -80,17 +73,45 @@ async fn run_ai_action_output(app: AppHandle, input: AiRunInput) -> Result<Strin
         .map_err(|_| AppError::PermissionDenied)?;
     let settings = SettingsService::get_settings(app_data_dir)?;
     let Some(api_key) = SettingsService::get_api_key(&SecretStore, "openai")? else {
-        return AiService::run_action(input).map(|result| result.output);
+        let output = AiService::run_action(input).map(|result| result.output)?;
+        return emit_local_ai_chunks(&app, &request_id, &output).await;
     };
 
     OpenAiResponsesClient::default()
-        .run(
+        .stream_text(
             &api_key,
             &settings.model,
             &AiService::provider_input(&input),
+            |chunk| emit_ai_chunk(&app, &request_id, chunk),
         )
         .await
-        .map(|result| result.output)
+}
+
+async fn emit_local_ai_chunks(
+    app: &AppHandle,
+    request_id: &str,
+    output: &str,
+) -> Result<(), AppError> {
+    for chunk in AiService::stream_chunks(output) {
+        emit_ai_chunk(app, request_id, &chunk)?;
+        tokio::task::yield_now().await;
+    }
+    Ok(())
+}
+
+fn emit_ai_chunk(app: &AppHandle, request_id: &str, chunk: &str) -> Result<(), AppError> {
+    if is_cancelled(app, request_id) {
+        return Err(AppError::AiCancelled);
+    }
+
+    let _ = app.emit(
+        "ai:chunk",
+        AiStreamChunk {
+            request_id: request_id.to_string(),
+            chunk: chunk.to_string(),
+        },
+    );
+    Ok(())
 }
 
 #[tauri::command]
