@@ -265,7 +265,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
+    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
   let lastIndex = 0;
 
   for (
@@ -280,47 +280,49 @@ function renderInline(text: string): ReactNode[] {
     if (match[1]) {
       nodes.push(<code key={`${match.index}-code`}>{match[1]}</code>);
     } else if (match[2]) {
-      nodes.push(<strong key={`${match.index}-strong`}>{match[2]}</strong>);
+      nodes.push(<code key={`${match.index}-code`}>{match[2]}</code>);
     } else if (match[3]) {
-      nodes.push(<em key={`${match.index}-em`}>{match[3]}</em>);
-    } else if (match[6]) {
-      nodes.push(
-        <sup key={`${match.index}-${match[6]}`}>
-          <a href={`#footnote-${match[6]}`}>{match[6]}</a>
-        </sup>,
-      );
+      nodes.push(<strong key={`${match.index}-strong`}>{match[3]}</strong>);
+    } else if (match[4]) {
+      nodes.push(<em key={`${match.index}-em`}>{match[4]}</em>);
     } else if (match[7]) {
       nodes.push(
-        <a
-          key={`${match.index}-${match[7]}`}
-          href={match[7]}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {match[7]}
-        </a>,
+        <sup key={`${match.index}-${match[7]}`}>
+          <a href={`#footnote-${match[7]}`}>{match[7]}</a>
+        </sup>,
       );
     } else if (match[8]) {
       nodes.push(
-        <a key={`${match.index}-${match[8]}`} href={`mailto:${match[8]}`}>
+        <a
+          key={`${match.index}-${match[8]}`}
+          href={match[8]}
+          target="_blank"
+          rel="noreferrer"
+        >
           {match[8]}
         </a>,
       );
     } else if (match[9]) {
-      nodes.push(<del key={`${match.index}-del`}>{match[9]}</del>);
+      nodes.push(
+        <a key={`${match.index}-${match[9]}`} href={`mailto:${match[9]}`}>
+          {match[9]}
+        </a>,
+      );
     } else if (match[10]) {
-      nodes.push(<strong key={`${match.index}-strong`}>{match[10]}</strong>);
+      nodes.push(<del key={`${match.index}-del`}>{match[10]}</del>);
     } else if (match[11]) {
-      nodes.push(<em key={`${match.index}-em`}>{match[11]}</em>);
+      nodes.push(<strong key={`${match.index}-strong`}>{match[11]}</strong>);
+    } else if (match[12]) {
+      nodes.push(<em key={`${match.index}-em`}>{match[12]}</em>);
     } else {
       nodes.push(
         <a
-          key={`${match.index}-${match[5]}`}
-          href={match[5]}
+          key={`${match.index}-${match[6]}`}
+          href={match[6]}
           target="_blank"
           rel="noreferrer"
         >
-          {match[4]}
+          {match[5]}
         </a>,
       );
     }

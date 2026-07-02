@@ -344,6 +344,23 @@ describe("MarkdownPreview", () => {
     expect(emphasis).toHaveTextContent("desktop workflow");
   });
 
+  it("renders double-backtick inline code spans", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-double-backtick-inline-code",
+      content: [
+        "# Inline",
+        "",
+        "Use ``pnpm `check` command`` before release.",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const code = container.querySelector("p code");
+    expect(code).toHaveTextContent("pnpm `check` command");
+    expect(screen.queryByText("``pnpm `check` command``")).not.toBeInTheDocument();
+  });
+
   it("renders underscore bold and italic text", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-underscore-inline",
