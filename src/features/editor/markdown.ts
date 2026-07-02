@@ -59,7 +59,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const fence = trimmed.match(/^(```|~~~)(\S*)\s*$/);
+    const fence = trimmed.match(/^(```|~~~)\s*(\S*)\s*$/);
     if (fence) {
       const codeLines: string[] = [];
       const closingFence = fence[1];

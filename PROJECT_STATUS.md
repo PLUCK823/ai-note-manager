@@ -2,7 +2,7 @@
 
 Date: 2026-07-02
 
-This document records the current implementation state of AI Note Manager after the first 46 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 47 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -144,22 +144,25 @@ This document records the current implementation state of AI Note Manager after 
 46. Markdown preview rendering supports tilde fenced code blocks.
     Evidence: `parseMarkdownBlocks` now recognizes both backtick and tilde fenced code blocks, preserves the fenced code body, and closes only on the matching fence marker. Frontend tests cover `~~~ts` fenced code rendering without exposing the raw fence marker.
 
+47. Markdown preview rendering supports spaced fenced code info strings.
+    Evidence: `parseMarkdownBlocks` now accepts a space between the opening fence marker and the info string, so fences like ```` ``` ts ```` render as code blocks instead of paragraphs. Frontend tests cover spaced info string code rendering without exposing the raw fence marker.
+
 ## Verification
 
-The latest full verification for the tilde fenced code completion point used:
+The latest full verification for the spaced fenced code info string completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 43 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 44 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks, common inline formatting, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists, nested ordered lists, nested task lists, tables, http/https images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
+   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings, common inline formatting, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists, nested ordered lists, nested task lists, tables, http/https images, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.

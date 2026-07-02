@@ -81,6 +81,25 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByText("~~~ts")).not.toBeInTheDocument();
   });
 
+  it("renders fenced code blocks with spaced info strings", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-spaced-info-code",
+      content: [
+        "# Build Script",
+        "",
+        "``` ts",
+        "const channel = 'stable';",
+        "```",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const codeBlock = container.querySelector("pre code");
+    expect(codeBlock).toHaveTextContent("const channel = 'stable';");
+    expect(screen.queryByText("``` ts")).not.toBeInTheDocument();
+  });
+
   it("renders heading levels four through six", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-headings",
