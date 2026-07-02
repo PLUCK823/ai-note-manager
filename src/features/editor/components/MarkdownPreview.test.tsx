@@ -340,6 +340,27 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders shortcut reference-style images", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-shortcut-reference-image",
+      content: [
+        "# Visual Notes",
+        "",
+        "![Preview diagram]",
+        "",
+        "[Preview diagram]: https://example.com/preview.png",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Preview diagram" });
+    expect(image).toHaveAttribute("src", "https://example.com/preview.png");
+    expect(
+      screen.queryByText("[Preview diagram]: https://example.com/preview.png"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders blockquotes with inline markdown", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-3",

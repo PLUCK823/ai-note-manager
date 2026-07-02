@@ -161,6 +161,20 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       }
     }
 
+    const shortcutReferenceImage = trimmed.match(/^!\[([^\]]*)\]$/);
+    if (shortcutReferenceImage) {
+      const src = linkDefinitions.get(shortcutReferenceImage[1].trim().toLowerCase());
+      if (src) {
+        blocks.push({
+          type: "image",
+          alt: shortcutReferenceImage[1].trim(),
+          src,
+        });
+        index += 1;
+        continue;
+      }
+    }
+
     if (parseTaskListItem(line)) {
       const list = parseTaskList(lines, index);
       blocks.push(list.block);
