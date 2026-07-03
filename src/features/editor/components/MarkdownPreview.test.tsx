@@ -781,6 +781,28 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders reference-style links with single-quoted title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-reference-link-single-quoted-title",
+      content: [
+        "# References",
+        "",
+        "Review the [release notes][release-notes] before packaging.",
+        "",
+        "[release-notes]: https://example.com/notes 'Release notes'",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const link = screen.getByRole("link", { name: "release notes" });
+    expect(link).toHaveAttribute("href", "https://example.com/notes");
+    expect(link).toHaveAttribute("title", "Release notes");
+    expect(
+      screen.queryByText("[release-notes]: https://example.com/notes 'Release notes'"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders collapsed reference-style links", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-collapsed-reference-links",
