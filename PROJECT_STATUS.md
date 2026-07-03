@@ -2,7 +2,7 @@
 
 Date: 2026-07-03
 
-This document records the current implementation state of AI Note Manager after the first 82 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 83 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -252,22 +252,25 @@ This document records the current implementation state of AI Note Manager after 
 82. Markdown preview rendering supports inline images in paragraphs.
     Evidence: `MarkdownPreview` now recognizes safe http/https inline image syntax inside paragraph text and renders it as an `img` element instead of a literal exclamation mark plus link. Frontend tests cover an inline image inside surrounding paragraph text and the empty-alt inline image edge case.
 
+83. Markdown preview rendering supports local inline image paths in paragraphs.
+    Evidence: `MarkdownPreview` now passes active vault context through inline rendering and resolves paragraph inline image targets against the active note path using the same safe asset conversion as block images. Frontend tests cover a relative inline image path inside surrounding paragraph text.
+
 ## Verification
 
-The latest full verification for the inline image completion point used:
+The latest full verification for the local inline image completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 80 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 81 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
 ## Not Complete Yet
 
 1. Markdown preview rendering is intentionally lightweight.
-   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings and variable-length fences, indented code blocks, paragraph hard line breaks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, backslash-escaped punctuation including escaped backslashes before formatting markers, Markdown entity references in ordinary text, formatted inline text, and image alt text, strikethrough text, inline links with optional double-quoted, single-quoted, or parenthesized title text, full/collapsed/shortcut reference-style links with optional double-quoted, single-quoted, or parenthesized title text, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, pipe tables with or without outer pipes and column alignment, http/https images with optional double-quoted, single-quoted, or parenthesized title text, inline http/https images, full/collapsed/shortcut reference-style images with optional double-quoted title text, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
+   The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings and variable-length fences, indented code blocks, paragraph hard line breaks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, backslash-escaped punctuation including escaped backslashes before formatting markers, Markdown entity references in ordinary text, formatted inline text, and image alt text, strikethrough text, inline links with optional double-quoted, single-quoted, or parenthesized title text, full/collapsed/shortcut reference-style links with optional double-quoted, single-quoted, or parenthesized title text, HTTP and email autolinks, blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, pipe tables with or without outer pipes and column alignment, http/https images with optional double-quoted, single-quoted, or parenthesized title text, inline http/https images, local inline images, full/collapsed/shortcut reference-style images with optional double-quoted title text, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.

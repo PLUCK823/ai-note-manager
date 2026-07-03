@@ -9,6 +9,10 @@ import { useVaultStore } from "../../vault/hooks";
 type MarkdownBlock = ReturnType<typeof parseMarkdownBlocks>[number];
 type ListBlock = Extract<MarkdownBlock, { type: "orderedList" | "unorderedList" }>;
 type TaskListBlock = Extract<MarkdownBlock, { type: "taskList" }>;
+type RenderContext = {
+  activePath: string | null;
+  vaultPath: string | null;
+};
 
 export function MarkdownPreview() {
   const content = useEditorStore((state) => state.content);
@@ -38,30 +42,27 @@ export function MarkdownPreview() {
 function renderBlock(
   block: MarkdownBlock,
   index: number,
-  context: {
-    activePath: string | null;
-    vaultPath: string | null;
-  },
+  context: RenderContext,
 ) {
   const key = `${block.type}-${index}`;
 
   switch (block.type) {
     case "heading":
-      return renderHeading(block.depth, block.text, key);
+      return renderHeading(block.depth, block.text, key, context);
     case "paragraph":
-      return <p key={key}>{renderInline(block.text)}</p>;
+      return <p key={key}>{renderInline(block.text, context)}</p>;
     case "blockquote":
       return (
         <blockquote key={key} aria-label="Markdown blockquote" role="blockquote">
-          {renderInline(block.text)}
+          {renderInline(block.text, context)}
         </blockquote>
       );
     case "unorderedList":
-      return renderList(block.items, key, "unordered");
+      return renderList(block.items, key, "unordered", context);
     case "taskList":
-      return renderTaskList(block.items, key);
+      return renderTaskList(block.items, key, context);
     case "orderedList":
-      return renderList(block.items, key, "ordered", false, block.start);
+      return renderList(block.items, key, "ordered", context, false, block.start);
     case "code":
       return (
         <pre key={key} className="markdown-code-block">
@@ -80,7 +81,7 @@ function renderBlock(
                     scope="col"
                     style={tableCellStyle(block.alignments[headerIndex])}
                   >
-                    {renderInline(header)}
+                    {renderInline(header, context)}
                   </th>
                 ))}
               </tr>
@@ -93,7 +94,7 @@ function renderBlock(
                       key={`${key}-cell-${rowIndex}-${cellIndex}`}
                       style={tableCellStyle(block.alignments[cellIndex])}
                     >
-                      {renderInline(row[cellIndex] ?? "")}
+                      {renderInline(row[cellIndex] ?? "", context)}
                     </td>
                   ))}
                 </tr>
@@ -128,7 +129,7 @@ function renderBlock(
           {block.items.map((item) => (
             <li id={`footnote-${item.id}`} key={`${key}-${item.id}`}>
               <span className="markdown-footnote-id">{item.id}</span>
-              <span>{renderInline(item.text)}</span>
+              <span>{renderInline(item.text, context)}</span>
             </li>
           ))}
         </ol>
@@ -144,30 +145,25 @@ function renderHeading(
   depth: Extract<MarkdownBlock, { type: "heading" }>["depth"],
   text: string,
   key: string,
+  context: RenderContext,
 ) {
   switch (depth) {
     case 1:
-      return <h1 key={key}>{renderInline(text)}</h1>;
+      return <h1 key={key}>{renderInline(text, context)}</h1>;
     case 2:
-      return <h2 key={key}>{renderInline(text)}</h2>;
+      return <h2 key={key}>{renderInline(text, context)}</h2>;
     case 3:
-      return <h3 key={key}>{renderInline(text)}</h3>;
+      return <h3 key={key}>{renderInline(text, context)}</h3>;
     case 4:
-      return <h4 key={key}>{renderInline(text)}</h4>;
+      return <h4 key={key}>{renderInline(text, context)}</h4>;
     case 5:
-      return <h5 key={key}>{renderInline(text)}</h5>;
+      return <h5 key={key}>{renderInline(text, context)}</h5>;
     case 6:
-      return <h6 key={key}>{renderInline(text)}</h6>;
+      return <h6 key={key}>{renderInline(text, context)}</h6>;
   }
 }
 
-function resolveImageSrc(
-  src: string,
-  context: {
-    activePath: string | null;
-    vaultPath: string | null;
-  },
-) {
+function resolveImageSrc(src: string, context: RenderContext) {
   if (/^https?:\/\/[^\s)]+$/.test(src)) {
     return src;
   }
@@ -218,6 +214,7 @@ function isAbsolutePath(src: string) {
 function renderTaskList(
   items: TaskListBlock["items"],
   key: string,
+  context: RenderContext,
   nested = false,
 ) {
   return (
@@ -236,10 +233,10 @@ function renderTaskList(
               type="checkbox"
               readOnly
             />
-            <span>{renderInline(item.text)}</span>
+            <span>{renderInline(item.text, context)}</span>
           </label>
           {item.children.length > 0
-            ? renderTaskList(item.children, `${key}-${itemIndex}-nested`, true)
+            ? renderTaskList(item.children, `${key}-${itemIndex}-nested`, context, true)
             : null}
         </li>
       ))}
@@ -251,6 +248,7 @@ function renderList(
   items: ListBlock["items"],
   key: string,
   type: "ordered" | "unordered",
+  context: RenderContext,
   nested = false,
   start?: number,
 ) {
@@ -268,9 +266,9 @@ function renderList(
     <Tag key={key} aria-label={label} start={type === "ordered" ? start : undefined}>
       {items.map((item, itemIndex) => (
         <li key={`${key}-${itemIndex}`}>
-          <span>{renderInline(item.text)}</span>
+          <span>{renderInline(item.text, context)}</span>
           {item.children.length > 0
-            ? renderList(item.children, `${key}-${itemIndex}-nested`, type, true)
+            ? renderList(item.children, `${key}-${itemIndex}-nested`, type, context, true)
             : null}
         </li>
       ))}
@@ -278,10 +276,10 @@ function renderList(
   );
 }
 
-function renderInline(text: string): ReactNode[] {
+function renderInline(text: string, context: RenderContext): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|!\[([^\]]*)\]\((https?:\/\/[^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|\[([^\]]+)\]\((https?:\/\/[^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
+    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|!\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|\[([^\]]+)\]\((https?:\/\/[^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
   let lastIndex = 0;
 
   for (
@@ -307,14 +305,19 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(<em key={`${match.index}-em`}>{renderInlineText(match[4])}</em>);
     } else if (match[6]) {
       const title = match[7] ?? match[8] ?? match[9];
-      nodes.push(
-        <img
-          key={`${match.index}-${match[6]}`}
-          alt={renderInlineText(match[5])}
-          src={match[6]}
-          title={title ? renderInlineText(title) : undefined}
-        />,
-      );
+      const imageSrc = resolveImageSrc(match[6], context);
+      if (imageSrc) {
+        nodes.push(
+          <img
+            key={`${match.index}-${match[6]}`}
+            alt={renderInlineText(match[5])}
+            src={imageSrc}
+            title={title ? renderInlineText(title) : undefined}
+          />,
+        );
+      } else {
+        pushTextWithLineBreaks(nodes, match[0], match.index);
+      }
     } else if (match[15]) {
       nodes.push(
         <sup key={`${match.index}-${match[15]}`}>

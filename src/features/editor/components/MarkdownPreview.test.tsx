@@ -511,6 +511,35 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("resolves local inline image paths from the active note", () => {
+    useVaultStore.getState().setCurrentVault({
+      id: "vault:/Users/test/notes",
+      lastOpenedAt: null,
+      name: "notes",
+      path: "/Users/test/notes",
+    });
+    useNotesStore.getState().setActivePath("projects/launch/Plan.md");
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-local-inline-image",
+      content: [
+        "# Visual Notes",
+        "",
+        "Review ![Launch diagram](../assets/diagram.png) before publishing.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Launch diagram" });
+    expect(image).toHaveAttribute(
+      "src",
+      "asset://localhost/%2FUsers%2Ftest%2Fnotes%2Fprojects%2Fassets%2Fdiagram.png",
+    );
+    expect(
+      screen.queryByText("![Launch diagram](../assets/diagram.png)"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders images with title text", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-image-title",
