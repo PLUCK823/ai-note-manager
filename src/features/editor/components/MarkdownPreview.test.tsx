@@ -559,6 +559,27 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByText(/&amp;|&lt;|&#x2713;|&#10003;|&quot;/)).not.toBeInTheDocument();
   });
 
+  it("renders markdown entity references inside inline formatting", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline-markdown-entities",
+      content: [
+        "# Inline",
+        "",
+        "Review **AT&amp;T** with *owner &lt;team&gt;*, ~~old &quot;copy&quot;~~, and [Docs &amp; Help](https://example.com/docs).",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    expect(container.querySelector("p strong")).toHaveTextContent("AT&T");
+    expect(container.querySelector("p em")).toHaveTextContent("owner <team>");
+    expect(container.querySelector("p del")).toHaveTextContent('old "copy"');
+    expect(screen.getByRole("link", { name: "Docs & Help" })).toHaveAttribute(
+      "href",
+      "https://example.com/docs",
+    );
+  });
+
   it("renders double-backtick inline code spans", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-double-backtick-inline-code",
