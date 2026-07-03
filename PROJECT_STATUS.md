@@ -1,8 +1,8 @@
 # Project Status
 
-Date: 2026-07-03
+Date: 2026-07-04
 
-This document records the current implementation state of AI Note Manager after the first 83 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 84 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -255,15 +255,18 @@ This document records the current implementation state of AI Note Manager after 
 83. Markdown preview rendering supports local inline image paths in paragraphs.
     Evidence: `MarkdownPreview` now passes active vault context through inline rendering and resolves paragraph inline image targets against the active note path using the same safe asset conversion as block images. Frontend tests cover a relative inline image path inside surrounding paragraph text.
 
+84. Workspace layout supports user-resizable panes.
+    Evidence: `AppLayout` now exposes accessible vertical separators for resizing the file/navigation pane, AI assistant pane, and Split-mode editor/preview panes. The app shell and split editor use CSS custom properties for pane widths, each primary pane has an independent scroll boundary, and frontend tests cover dragging the outer and split separators. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-04-resizable-workspace-layout-design.md` and `docs/superpowers/plans/2026-07-04-resizable-workspace-layout.md`.
+
 ## Verification
 
-The latest full verification for the local inline image completion point used:
+The latest full verification for the resizable workspace layout completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 81 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 83 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -275,10 +278,16 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.
 
+3. Workspace layout customization is in its first phase.
+   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, and the primary panes scroll independently. Arbitrary panel reordering, docking to other edges, hiding panels, and persisted layout preferences are not implemented yet.
+
 ## Next Priorities
 
-1. Continue Markdown preview fidelity improvements.
+1. Continue workspace layout customization.
+   Persist pane sizes and add controlled panel ordering once the resizing foundation is proven in day-to-day use.
+
+2. Continue Markdown preview fidelity improvements.
    Add stricter CommonMark behavior if richer reading mode fidelity becomes important.
 
-2. Expand desktop-shell workflow coverage where practical.
+3. Expand desktop-shell workflow coverage where practical.
    Native OS file picker automation remains a separate platform-specific concern.

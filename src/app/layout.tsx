@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type CSSProperties, type PointerEvent, useState } from "react";
 import { FileText, PanelRight, Search, Settings } from "lucide-react";
 
 import { AiSidebar } from "../features/ai/components/AiSidebar";
@@ -16,15 +16,36 @@ import { VaultPicker } from "../features/vault/components/VaultPicker";
 import { VaultStatus } from "../features/vault/components/VaultStatus";
 import { Button } from "../shared/components/Button";
 
+const OUTER_LAYOUT_LIMITS = {
+  left: { defaultValue: 288, min: 220, max: 420 },
+  right: { defaultValue: 336, min: 260, max: 520 },
+};
+
+const SPLIT_LAYOUT_LIMITS = {
+  preview: { defaultValue: 360, min: 240, max: 640 },
+};
+
 export function AppLayout() {
   const [editorMode, setEditorMode] = useState<"edit" | "split" | "preview">(
     "split",
   );
+  const [leftWidth, setLeftWidth] = useState(OUTER_LAYOUT_LIMITS.left.defaultValue);
+  const [rightWidth, setRightWidth] = useState(
+    OUTER_LAYOUT_LIMITS.right.defaultValue,
+  );
+  const [previewWidth, setPreviewWidth] = useState(
+    SPLIT_LAYOUT_LIMITS.preview.defaultValue,
+  );
   const showEditor = editorMode === "edit" || editorMode === "split";
   const showPreview = editorMode === "preview" || editorMode === "split";
+  const shellStyle = {
+    "--vault-pane-width": `${leftWidth}px`,
+    "--ai-pane-width": `${rightWidth}px`,
+    "--preview-pane-width": `${previewWidth}px`,
+  } as CSSProperties;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-testid="app-shell" style={shellStyle}>
       <aside className="vault-pane" aria-label="Vault navigation">
         <div className="brand-bar">
           <div>
@@ -41,6 +62,15 @@ export function AppLayout() {
         <SearchResults />
         <FileTree />
       </aside>
+
+      <ResizeSeparator
+        ariaLabel="Resize file navigation"
+        className="workspace-resizer workspace-resizer-left"
+        max={OUTER_LAYOUT_LIMITS.left.max}
+        min={OUTER_LAYOUT_LIMITS.left.min}
+        value={leftWidth}
+        onResize={setLeftWidth}
+      />
 
       <main className="workspace" aria-label="Note workspace">
         <NoteTabs />
@@ -83,9 +113,30 @@ export function AppLayout() {
               <MarkdownEditor />
             </div>
           ) : null}
+          {editorMode === "split" ? (
+            <ResizeSeparator
+              ariaLabel="Resize editor and preview"
+              className="workspace-resizer editor-preview-resizer"
+              max={SPLIT_LAYOUT_LIMITS.preview.max}
+              min={SPLIT_LAYOUT_LIMITS.preview.min}
+              value={previewWidth}
+              onResize={setPreviewWidth}
+              reverse
+            />
+          ) : null}
           {showPreview ? <MarkdownPreview /> : null}
         </section>
       </main>
+
+      <ResizeSeparator
+        ariaLabel="Resize AI assistant"
+        className="workspace-resizer workspace-resizer-right"
+        max={OUTER_LAYOUT_LIMITS.right.max}
+        min={OUTER_LAYOUT_LIMITS.right.min}
+        value={rightWidth}
+        onResize={setRightWidth}
+        reverse
+      />
 
       <AiSidebar />
 
@@ -103,4 +154,74 @@ export function AppLayout() {
       <SettingsPage />
     </div>
   );
+}
+
+function ResizeSeparator({
+  ariaLabel,
+  className,
+  max,
+  min,
+  onResize,
+  reverse = false,
+  value,
+}: {
+  ariaLabel: string;
+  className: string;
+  max: number;
+  min: number;
+  onResize: (value: number) => void;
+  reverse?: boolean;
+  value: number;
+}) {
+  function resize(nextValue: number) {
+    onResize(clamp(nextValue, min, max));
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startValue = value;
+
+    function handlePointerMove(moveEvent: globalThis.PointerEvent) {
+      const delta = moveEvent.clientX - startX;
+      resize(startValue + (reverse ? -delta : delta));
+    }
+
+    function handlePointerUp() {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+  }
+
+  return (
+    <div
+      aria-label={ariaLabel}
+      aria-orientation="vertical"
+      aria-valuemax={max}
+      aria-valuemin={min}
+      aria-valuenow={value}
+      className={className}
+      role="separator"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          resize(value + (reverse ? 10 : -10));
+        }
+
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          resize(value + (reverse ? -10 : 10));
+        }
+      }}
+      onPointerDown={handlePointerDown}
+    />
+  );
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }

@@ -20,7 +20,9 @@
 body {
   margin: 0;
   min-width: 960px;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 button,
@@ -34,10 +36,17 @@ button {
 }
 
 .app-shell {
+  --ai-pane-width: 336px;
+  --preview-pane-width: 360px;
+  --vault-pane-width: 288px;
   display: grid;
-  grid-template-columns: 288px minmax(460px, 1fr) 336px;
+  grid-template-columns:
+    var(--vault-pane-width) 8px minmax(460px, 1fr) 8px
+    var(--ai-pane-width);
   grid-template-rows: 1fr 34px;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   background:
     linear-gradient(90deg, rgba(23, 32, 27, 0.06), transparent 1px) 0 0 / 28px
       28px,
@@ -47,7 +56,9 @@ button {
 .vault-pane,
 .workspace,
 .ai-sidebar {
+  min-width: 0;
   min-height: calc(100vh - 34px);
+  overflow: auto;
 }
 
 .vault-pane,
@@ -279,7 +290,35 @@ button {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
   padding: 16px;
+}
+
+.workspace-resizer {
+  position: relative;
+  min-width: 8px;
+  min-height: 0;
+  border: 0;
+  background: rgba(23, 32, 27, 0.04);
+  cursor: col-resize;
+  outline: none;
+  touch-action: none;
+}
+
+.workspace-resizer::after {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 3px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(31, 95, 74, 0.24);
+  content: "";
+}
+
+.workspace-resizer:hover::after,
+.workspace-resizer:focus-visible::after {
+  background: #1f5f4a;
 }
 
 .note-tabs {
@@ -355,7 +394,7 @@ button {
 
 .editor-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 8px var(--preview-pane-width);
   gap: 14px;
   flex: 1;
   min-height: 0;
@@ -364,6 +403,10 @@ button {
 .editor-grid-edit,
 .editor-grid-preview {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.editor-grid-split {
+  align-items: stretch;
 }
 
 .editor-surface,
@@ -376,8 +419,10 @@ button {
 
 .editor-surface {
   display: flex;
+  min-width: 0;
   min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .surface-toolbar {
@@ -475,6 +520,12 @@ button {
 .preview-surface,
 .ai-preview {
   padding: 16px;
+}
+
+.preview-surface {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
 }
 
 .markdown-preview-body,

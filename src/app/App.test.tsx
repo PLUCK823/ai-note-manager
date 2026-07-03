@@ -72,6 +72,67 @@ describe("App", () => {
     expect(screen.getByLabelText("Markdown preview")).toBeInTheDocument();
   });
 
+  it("resizes the outer workspace panes with separator handles", () => {
+    render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    const shell = screen.getByTestId("app-shell");
+    const vaultSeparator = screen.getByRole("separator", {
+      name: "Resize file navigation",
+    });
+    const aiSeparator = screen.getByRole("separator", {
+      name: "Resize AI assistant",
+    });
+
+    expect(vaultSeparator).toHaveAttribute("aria-valuenow", "288");
+    expect(aiSeparator).toHaveAttribute("aria-valuenow", "336");
+
+    fireEvent.pointerDown(vaultSeparator, { clientX: 288, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 328, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+
+    expect(shell).toHaveStyle({ "--vault-pane-width": "328px" });
+    expect(vaultSeparator).toHaveAttribute("aria-valuenow", "328");
+
+    fireEvent.pointerDown(aiSeparator, { clientX: 900, pointerId: 2 });
+    fireEvent.pointerMove(window, { clientX: 860, pointerId: 2 });
+    fireEvent.pointerUp(window, { pointerId: 2 });
+
+    expect(shell).toHaveStyle({ "--ai-pane-width": "376px" });
+    expect(aiSeparator).toHaveAttribute("aria-valuenow", "376");
+  });
+
+  it("resizes the editor and preview panes in split mode", () => {
+    render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    const shell = screen.getByTestId("app-shell");
+    const splitSeparator = screen.getByRole("separator", {
+      name: "Resize editor and preview",
+    });
+
+    expect(splitSeparator).toHaveAttribute("aria-valuenow", "360");
+
+    fireEvent.pointerDown(splitSeparator, { clientX: 720, pointerId: 3 });
+    fireEvent.pointerMove(window, { clientX: 680, pointerId: 3 });
+    fireEvent.pointerUp(window, { pointerId: 3 });
+
+    expect(shell).toHaveStyle({ "--preview-pane-width": "400px" });
+    expect(splitSeparator).toHaveAttribute("aria-valuenow", "400");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(
+      screen.queryByRole("separator", { name: "Resize editor and preview" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("restores the most recent vault on startup", async () => {
     getRecentVaultMock.mockResolvedValue({
       id: "vault:/Users/test/notes",
