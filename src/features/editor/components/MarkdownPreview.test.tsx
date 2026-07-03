@@ -82,6 +82,26 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders inline links with single-quoted title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline-link-single-quoted-title",
+      content: [
+        "# References",
+        "",
+        "Read the [release notes](https://example.com/notes 'Release notes').",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const link = screen.getByRole("link", { name: "release notes" });
+    expect(link).toHaveAttribute("href", "https://example.com/notes");
+    expect(link).toHaveAttribute("title", "Release notes");
+    expect(
+      screen.queryByText("[release notes](https://example.com/notes 'Release notes')"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders hard line breaks in paragraphs", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-hard-line-breaks",
