@@ -62,6 +62,26 @@ describe("MarkdownPreview", () => {
     expect(screen.getByText("const ready = true;")).toBeInTheDocument();
   });
 
+  it("renders inline links with optional title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline-link-title",
+      content: [
+        "# References",
+        "",
+        'Read the [release docs](https://example.com/docs "Release docs").',
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const link = screen.getByRole("link", { name: "release docs" });
+    expect(link).toHaveAttribute("href", "https://example.com/docs");
+    expect(link).toHaveAttribute("title", "Release docs");
+    expect(
+      screen.queryByText('[release docs](https://example.com/docs "Release docs")'),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders hard line breaks in paragraphs", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-hard-line-breaks",

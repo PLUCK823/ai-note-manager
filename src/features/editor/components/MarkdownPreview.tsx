@@ -277,7 +277,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
+    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)(?:\s+"([^"]*)")?\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
   let lastIndex = 0;
 
   for (
@@ -301,35 +301,35 @@ function renderInline(text: string): ReactNode[] {
       nodes.push(<strong key={`${match.index}-strong`}>{renderInlineText(match[3])}</strong>);
     } else if (match[4]) {
       nodes.push(<em key={`${match.index}-em`}>{renderInlineText(match[4])}</em>);
-    } else if (match[7]) {
-      nodes.push(
-        <sup key={`${match.index}-${match[7]}`}>
-          <a href={`#footnote-${match[7]}`}>{renderInlineText(match[7])}</a>
-        </sup>,
-      );
     } else if (match[8]) {
       nodes.push(
-        <a
-          key={`${match.index}-${match[8]}`}
-          href={match[8]}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {renderInlineText(match[8])}
-        </a>,
+        <sup key={`${match.index}-${match[8]}`}>
+          <a href={`#footnote-${match[8]}`}>{renderInlineText(match[8])}</a>
+        </sup>,
       );
     } else if (match[9]) {
       nodes.push(
-        <a key={`${match.index}-${match[9]}`} href={`mailto:${match[9]}`}>
+        <a
+          key={`${match.index}-${match[9]}`}
+          href={match[9]}
+          target="_blank"
+          rel="noreferrer"
+        >
           {renderInlineText(match[9])}
         </a>,
       );
     } else if (match[10]) {
-      nodes.push(<del key={`${match.index}-del`}>{renderInlineText(match[10])}</del>);
+      nodes.push(
+        <a key={`${match.index}-${match[10]}`} href={`mailto:${match[10]}`}>
+          {renderInlineText(match[10])}
+        </a>,
+      );
     } else if (match[11]) {
-      nodes.push(<strong key={`${match.index}-strong`}>{renderInlineText(match[11])}</strong>);
+      nodes.push(<del key={`${match.index}-del`}>{renderInlineText(match[11])}</del>);
     } else if (match[12]) {
-      nodes.push(<em key={`${match.index}-em`}>{renderInlineText(match[12])}</em>);
+      nodes.push(<strong key={`${match.index}-strong`}>{renderInlineText(match[12])}</strong>);
+    } else if (match[13]) {
+      nodes.push(<em key={`${match.index}-em`}>{renderInlineText(match[13])}</em>);
     } else {
       nodes.push(
         <a
@@ -337,6 +337,7 @@ function renderInline(text: string): ReactNode[] {
           href={match[6]}
           target="_blank"
           rel="noreferrer"
+          title={match[7] ? renderInlineText(match[7]) : undefined}
         >
           {renderInlineText(match[5])}
         </a>,
