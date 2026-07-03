@@ -39,7 +39,7 @@ type MarkdownBlock =
       headers: string[];
       rows: string[][];
     }
-  | { type: "image"; alt: string; src: string }
+  | { type: "image"; alt: string; src: string; title: string | null }
   | { type: "thematicBreak" }
   | { type: "footnotes"; items: Array<{ id: string; text: string }> };
 
@@ -152,12 +152,13 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const image = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+    const image = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/);
     if (image) {
       blocks.push({
         type: "image",
         alt: image[1].trim(),
         src: image[2],
+        title: image[3] ?? null,
       });
       index += 1;
       continue;
@@ -172,6 +173,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
           type: "image",
           alt: referenceImage[1].trim(),
           src: definition.href,
+          title: null,
         });
         index += 1;
         continue;
@@ -186,6 +188,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
           type: "image",
           alt: shortcutReferenceImage[1].trim(),
           src: definition.href,
+          title: null,
         });
         index += 1;
         continue;
@@ -228,7 +231,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         isSetextHeadingUnderline(next) ||
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
-        /^!\[[^\]]*\]\([^\s)]+\)$/.test(next) ||
+        /^!\[[^\]]*\]\([^\s)]+(?:\s+"[^"]*")?\)$/.test(next) ||
         Boolean(parseTaskListItem(lines[index] ?? "")) ||
         Boolean(parseUnorderedListItem(lines[index] ?? "")) ||
         Boolean(parseOrderedListItem(lines[index] ?? ""))

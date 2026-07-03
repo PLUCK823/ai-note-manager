@@ -112,7 +112,11 @@ function renderBlock(
 
         return (
           <figure key={key} className="markdown-image">
-            <img alt={imageAlt} src={imageSrc} />
+            <img
+              alt={imageAlt}
+              src={imageSrc}
+              title={block.title ? renderInlineText(block.title) : undefined}
+            />
           </figure>
         );
       }

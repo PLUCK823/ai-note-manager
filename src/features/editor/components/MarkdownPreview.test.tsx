@@ -472,6 +472,28 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders images with title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-image-title",
+      content: [
+        "# Visual Notes",
+        "",
+        '![Preview diagram](https://example.com/preview.png "Preview diagram")',
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Preview diagram" });
+    expect(image).toHaveAttribute("src", "https://example.com/preview.png");
+    expect(image).toHaveAttribute("title", "Preview diagram");
+    expect(
+      screen.queryByText(
+        '![Preview diagram](https://example.com/preview.png "Preview diagram")',
+      ),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders reference-style images", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-reference-image",
