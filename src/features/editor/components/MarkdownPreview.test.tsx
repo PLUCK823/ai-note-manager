@@ -102,6 +102,26 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders inline links with parenthesized title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline-link-parenthesized-title",
+      content: [
+        "# References",
+        "",
+        "Read the [release guide](https://example.com/guide (Release guide)).",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const link = screen.getByRole("link", { name: "release guide" });
+    expect(link).toHaveAttribute("href", "https://example.com/guide");
+    expect(link).toHaveAttribute("title", "Release guide");
+    expect(
+      screen.queryByText("[release guide](https://example.com/guide (Release guide))"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders hard line breaks in paragraphs", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-hard-line-breaks",
