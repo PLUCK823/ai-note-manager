@@ -2,7 +2,7 @@
 
 Date: 2026-07-04
 
-This document records the current implementation state of AI Note Manager after the first 84 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 85 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -258,15 +258,18 @@ This document records the current implementation state of AI Note Manager after 
 84. Workspace layout supports user-resizable panes.
     Evidence: `AppLayout` now exposes accessible vertical separators for resizing the file/navigation pane, AI assistant pane, and Split-mode editor/preview panes. The app shell and split editor use CSS custom properties for pane widths, each primary pane has an independent scroll boundary, and frontend tests cover dragging the outer and split separators. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-04-resizable-workspace-layout-design.md` and `docs/superpowers/plans/2026-07-04-resizable-workspace-layout.md`.
 
+85. Split-mode editor and preview scrolling sync by default.
+    Evidence: `AppLayout` now reads the shared settings query and synchronizes CodeMirror and Markdown preview scroll positions by proportional vertical scroll when Split mode is active. `SettingsPage` exposes a default-on `Sync editor and preview scrolling` setting backed by the persisted Tauri settings contract, and tests cover both scroll directions plus the disabled setting. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-04-synced-editor-preview-scroll-design.md` and `docs/superpowers/plans/2026-07-04-synced-editor-preview-scroll.md`.
+
 ## Verification
 
-The latest full verification for the resizable workspace layout completion point used:
+The latest full verification for the synced editor/preview scroll completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 83 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 86 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 38 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -279,7 +282,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.
 
 3. Workspace layout customization is in its first phase.
-   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, and the primary panes scroll independently. Arbitrary panel reordering, docking to other edges, hiding panels, and persisted layout preferences are not implemented yet.
+   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, the primary panes scroll independently, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering, docking to other edges, hiding panels, persisted layout preferences, and block-level editor/preview source mapping are not implemented yet.
 
 ## Next Priorities
 

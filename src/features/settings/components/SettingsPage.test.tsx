@@ -38,6 +38,7 @@ describe("SettingsPage", () => {
       model: "gpt-4.1-mini",
       aiReadScope: "current_note",
       autosave: true,
+      syncPreviewScroll: true,
     });
     updateSettingsMock.mockImplementation((input) => Promise.resolve(input));
     saveApiKeyMock.mockResolvedValue({ provider: "openai", saved: true });
@@ -50,6 +51,7 @@ describe("SettingsPage", () => {
       target: { value: "full_vault" },
     });
     fireEvent.click(screen.getByLabelText("Autosave"));
+    fireEvent.click(screen.getByLabelText("Sync editor and preview scrolling"));
     fireEvent.change(screen.getByLabelText("API key"), {
       target: { value: "sk-test" },
     });
@@ -60,6 +62,7 @@ describe("SettingsPage", () => {
         model: "gpt-4.1",
         aiReadScope: "full_vault",
         autosave: false,
+        syncPreviewScroll: false,
       });
     });
     expect(saveApiKeyMock).toHaveBeenCalledWith("openai", "sk-test");

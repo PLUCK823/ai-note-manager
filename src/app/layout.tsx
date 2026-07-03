@@ -1,4 +1,11 @@
-import { type CSSProperties, type PointerEvent, useState } from "react";
+import {
+  type CSSProperties,
+  type PointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FileText, PanelRight, Search, Settings } from "lucide-react";
 
 import { AiSidebar } from "../features/ai/components/AiSidebar";
@@ -11,6 +18,7 @@ import { NoteHeader } from "../features/notes/components/NoteHeader";
 import { NoteTabs } from "../features/notes/components/NoteTabs";
 import { SearchBox } from "../features/search/components/SearchBox";
 import { SearchResults } from "../features/search/components/SearchResults";
+import { getSettings } from "../features/settings/api";
 import { SettingsPage } from "../features/settings/components/SettingsPage";
 import { VaultPicker } from "../features/vault/components/VaultPicker";
 import { VaultStatus } from "../features/vault/components/VaultStatus";
@@ -26,6 +34,10 @@ const SPLIT_LAYOUT_LIMITS = {
 };
 
 export function AppLayout() {
+  const settingsQuery = useQuery({
+    queryKey: ["settings"],
+    queryFn: getSettings,
+  });
   const [editorMode, setEditorMode] = useState<"edit" | "split" | "preview">(
     "split",
   );
@@ -36,13 +48,67 @@ export function AppLayout() {
   const [previewWidth, setPreviewWidth] = useState(
     SPLIT_LAYOUT_LIMITS.preview.defaultValue,
   );
+  const [editorScroller, setEditorScroller] = useState<HTMLElement | null>(null);
+  const [previewSurface, setPreviewSurface] = useState<HTMLElement | null>(null);
+  const isSyncingScrollRef = useRef(false);
   const showEditor = editorMode === "edit" || editorMode === "split";
   const showPreview = editorMode === "preview" || editorMode === "split";
+  const syncPreviewScroll = settingsQuery.data?.syncPreviewScroll ?? true;
   const shellStyle = {
     "--vault-pane-width": `${leftWidth}px`,
     "--ai-pane-width": `${rightWidth}px`,
     "--preview-pane-width": `${previewWidth}px`,
   } as CSSProperties;
+
+  useEffect(() => {
+    if (
+      editorMode !== "split" ||
+      !syncPreviewScroll ||
+      !editorScroller ||
+      !previewSurface
+    ) {
+      return;
+    }
+
+    function syncScroll(source: HTMLElement, target: HTMLElement) {
+      const sourceScrollable = source.scrollHeight - source.clientHeight;
+      const targetScrollable = target.scrollHeight - target.clientHeight;
+      if (sourceScrollable <= 0 || targetScrollable <= 0) {
+        return;
+      }
+
+      const ratio = source.scrollTop / sourceScrollable;
+      target.scrollTop = Math.round(ratio * targetScrollable);
+    }
+
+    function runSyncedScroll(source: HTMLElement, target: HTMLElement) {
+      if (isSyncingScrollRef.current) {
+        return;
+      }
+
+      isSyncingScrollRef.current = true;
+      syncScroll(source, target);
+      window.setTimeout(() => {
+        isSyncingScrollRef.current = false;
+      }, 0);
+    }
+
+    function handleEditorScroll() {
+      runSyncedScroll(editorScroller!, previewSurface!);
+    }
+
+    function handlePreviewScroll() {
+      runSyncedScroll(previewSurface!, editorScroller!);
+    }
+
+    editorScroller.addEventListener("scroll", handleEditorScroll);
+    previewSurface.addEventListener("scroll", handlePreviewScroll);
+
+    return () => {
+      editorScroller.removeEventListener("scroll", handleEditorScroll);
+      previewSurface.removeEventListener("scroll", handlePreviewScroll);
+    };
+  }, [editorMode, editorScroller, previewSurface, syncPreviewScroll]);
 
   return (
     <div className="app-shell" data-testid="app-shell" style={shellStyle}>
@@ -110,7 +176,7 @@ export function AppLayout() {
         >
           {showEditor ? (
             <div className="editor-surface">
-              <MarkdownEditor />
+              <MarkdownEditor onScrollerReady={setEditorScroller} />
             </div>
           ) : null}
           {editorMode === "split" ? (
@@ -124,7 +190,7 @@ export function AppLayout() {
               reverse
             />
           ) : null}
-          {showPreview ? <MarkdownPreview /> : null}
+          {showPreview ? <MarkdownPreview surfaceRef={setPreviewSurface} /> : null}
         </section>
       </main>
 

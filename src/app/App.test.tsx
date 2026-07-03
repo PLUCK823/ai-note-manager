@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useVaultStore } from "../features/vault/hooks";
@@ -6,16 +6,30 @@ import { App } from "./App";
 import { Providers } from "./providers";
 
 const getRecentVaultMock = vi.fn();
+const getSettingsMock = vi.fn();
 
 vi.mock("../features/vault/api", () => ({
   getRecentVault: () => getRecentVaultMock(),
   selectVault: vi.fn(),
 }));
 
+vi.mock("../features/settings/api", () => ({
+  getSettings: () => getSettingsMock(),
+  updateSettings: vi.fn(),
+  saveApiKey: vi.fn(),
+}));
+
 describe("App", () => {
   beforeEach(() => {
     getRecentVaultMock.mockReset();
     getRecentVaultMock.mockResolvedValue(null);
+    getSettingsMock.mockReset();
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+    });
     useVaultStore.getState().setCurrentVault(null);
   });
 
@@ -133,6 +147,79 @@ describe("App", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("syncs preview scrolling from the editor in split mode", async () => {
+    const { container } = render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    await screen.findByLabelText("Sync editor and preview scrolling");
+
+    const editorScroller = container.querySelector(".cm-scroller") as HTMLElement;
+    const previewSurface = screen.getByLabelText("Markdown preview");
+    defineScrollMetrics(editorScroller, { clientHeight: 100, scrollHeight: 500 });
+    defineScrollMetrics(previewSurface, { clientHeight: 200, scrollHeight: 800 });
+
+    editorScroller.scrollTop = 100;
+    fireEvent.scroll(editorScroller);
+
+    await waitFor(() => {
+      expect(previewSurface.scrollTop).toBe(150);
+    });
+  });
+
+  it("syncs editor scrolling from the preview in split mode", async () => {
+    const { container } = render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    await screen.findByLabelText("Sync editor and preview scrolling");
+
+    const editorScroller = container.querySelector(".cm-scroller") as HTMLElement;
+    const previewSurface = screen.getByLabelText("Markdown preview");
+    defineScrollMetrics(editorScroller, { clientHeight: 100, scrollHeight: 500 });
+    defineScrollMetrics(previewSurface, { clientHeight: 200, scrollHeight: 800 });
+
+    previewSurface.scrollTop = 300;
+    fireEvent.scroll(previewSurface);
+
+    await waitFor(() => {
+      expect(editorScroller.scrollTop).toBe(200);
+    });
+  });
+
+  it("does not sync editor and preview scrolling when the setting is disabled", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: false,
+    });
+    const { container } = render(
+      <Providers>
+        <App />
+      </Providers>,
+    );
+
+    const syncToggle = await screen.findByLabelText(
+      "Sync editor and preview scrolling",
+    );
+    expect(syncToggle).not.toBeChecked();
+
+    const editorScroller = container.querySelector(".cm-scroller") as HTMLElement;
+    const previewSurface = screen.getByLabelText("Markdown preview");
+    defineScrollMetrics(editorScroller, { clientHeight: 100, scrollHeight: 500 });
+    defineScrollMetrics(previewSurface, { clientHeight: 200, scrollHeight: 800 });
+
+    editorScroller.scrollTop = 100;
+    fireEvent.scroll(editorScroller);
+
+    expect(previewSurface.scrollTop).toBe(0);
+  });
+
   it("restores the most recent vault on startup", async () => {
     getRecentVaultMock.mockResolvedValue({
       id: "vault:/Users/test/notes",
@@ -151,3 +238,17 @@ describe("App", () => {
     expect(screen.getByText("/Users/test/notes")).toBeInTheDocument();
   });
 });
+
+function defineScrollMetrics(
+  element: HTMLElement,
+  metrics: { clientHeight: number; scrollHeight: number },
+) {
+  Object.defineProperty(element, "clientHeight", {
+    configurable: true,
+    value: metrics.clientHeight,
+  });
+  Object.defineProperty(element, "scrollHeight", {
+    configurable: true,
+    value: metrics.scrollHeight,
+  });
+}

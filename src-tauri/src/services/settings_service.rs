@@ -66,6 +66,7 @@ impl SettingsService {
             model: "gpt-4.1-mini".to_string(),
             ai_read_scope: AiReadScope::CurrentNote,
             autosave: true,
+            sync_preview_scroll: true,
         }
     }
 }
@@ -86,6 +87,7 @@ mod tests {
             model: "gpt-4.1".to_string(),
             ai_read_scope: AiReadScope::LinkedNotes,
             autosave: false,
+            sync_preview_scroll: false,
         };
 
         SettingsService::update_settings(&root, settings).unwrap();
@@ -94,6 +96,36 @@ mod tests {
         assert_eq!(loaded.model, "gpt-4.1");
         assert!(matches!(loaded.ai_read_scope, AiReadScope::LinkedNotes));
         assert!(!loaded.autosave);
+        assert!(!loaded.sync_preview_scroll);
+    }
+
+    #[test]
+    fn defaults_to_synced_editor_preview_scroll() {
+        let root = test_root("default-sync-preview-scroll");
+
+        let settings = SettingsService::get_settings(&root).unwrap();
+
+        assert!(settings.sync_preview_scroll);
+    }
+
+    #[test]
+    fn reads_existing_settings_without_sync_preview_scroll() {
+        let root = test_root("backfill-sync-preview-scroll");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            SettingsService::settings_path(&root),
+            r#"{
+  "model": "gpt-4.1",
+  "aiReadScope": "current_note",
+  "autosave": true
+}"#,
+        )
+        .unwrap();
+
+        let settings = SettingsService::get_settings(&root).unwrap();
+
+        assert_eq!(settings.model, "gpt-4.1");
+        assert!(settings.sync_preview_scroll);
     }
 
     #[test]

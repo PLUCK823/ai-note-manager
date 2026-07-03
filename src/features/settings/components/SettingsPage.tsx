@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Button } from "../../../shared/components/Button";
@@ -9,6 +9,7 @@ const defaultSettings: AppSettings = {
   model: "gpt-4.1-mini",
   aiReadScope: "current_note",
   autosave: true,
+  syncPreviewScroll: true,
 };
 
 export function SettingsPage() {
@@ -29,6 +30,7 @@ export function SettingsPage() {
 }
 
 function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
   const [apiKey, setApiKey] = useState("");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -40,6 +42,7 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
       await saveApiKey("openai", apiKey.trim());
     }
     setSettings(savedSettings);
+    queryClient.setQueryData(["settings"], savedSettings);
     setSaveMessage("Settings saved");
   }
 
@@ -90,6 +93,20 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
             }}
           />
           Autosave
+        </label>
+        <label className="checkbox-label">
+          <input
+            checked={settings.syncPreviewScroll}
+            type="checkbox"
+            onChange={(event) => {
+              const syncPreviewScroll = event.currentTarget.checked;
+              setSettings((current) => ({
+                ...current,
+                syncPreviewScroll,
+              }));
+            }}
+          />
+          Sync editor and preview scrolling
         </label>
         <label>
           API key

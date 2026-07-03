@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 
 import { parseMarkdownBlocks } from "../markdown";
@@ -14,14 +14,14 @@ type RenderContext = {
   vaultPath: string | null;
 };
 
-export function MarkdownPreview() {
+export function MarkdownPreview({ surfaceRef }: { surfaceRef?: Ref<HTMLElement> } = {}) {
   const content = useEditorStore((state) => state.content);
   const currentVault = useVaultStore((state) => state.currentVault);
   const activePath = useNotesStore((state) => state.activePath);
   const blocks = parseMarkdownBlocks(content);
 
   return (
-    <section className="preview-surface" aria-label="Markdown preview">
+    <section className="preview-surface" aria-label="Markdown preview" ref={surfaceRef}>
       <p className="eyebrow">Preview</p>
       <div className="markdown-preview-body">
         {blocks.length > 0 ? (

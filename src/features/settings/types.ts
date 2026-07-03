@@ -4,4 +4,5 @@ export type AppSettings = {
   model: string;
   aiReadScope: AiReadScope;
   autosave: boolean;
+  syncPreviewScroll: boolean;
 };

@@ -14,6 +14,12 @@ pub struct AppSettings {
     pub model: String,
     pub ai_read_scope: AiReadScope,
     pub autosave: bool,
+    #[serde(default = "default_sync_preview_scroll")]
+    pub sync_preview_scroll: bool,
+}
+
+fn default_sync_preview_scroll() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -33,11 +39,14 @@ mod tests {
             model: "gpt-4.1-mini".to_string(),
             ai_read_scope: AiReadScope::CurrentNote,
             autosave: true,
+            sync_preview_scroll: true,
         };
 
         let value = serde_json::to_value(settings).unwrap();
 
         assert_eq!(value["aiReadScope"], "current_note");
+        assert_eq!(value["syncPreviewScroll"], true);
         assert!(value.get("ai_read_scope").is_none());
+        assert!(value.get("sync_preview_scroll").is_none());
     }
 }

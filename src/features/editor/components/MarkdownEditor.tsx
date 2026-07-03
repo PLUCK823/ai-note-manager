@@ -17,9 +17,13 @@ import { useEditorStore } from "../editorState";
 
 type MarkdownEditorProps = {
   onEditorReady?: (view: EditorView) => void;
+  onScrollerReady?: (element: HTMLElement | null) => void;
 };
 
-export function MarkdownEditor({ onEditorReady }: MarkdownEditorProps = {}) {
+export function MarkdownEditor({
+  onEditorReady,
+  onScrollerReady,
+}: MarkdownEditorProps = {}) {
   const content = useEditorStore((state) => state.content);
   const setContent = useEditorStore((state) => state.setContent);
   const setCursorPosition = useEditorStore((state) => state.setCursorPosition);
@@ -28,16 +32,18 @@ export function MarkdownEditor({ onEditorReady }: MarkdownEditorProps = {}) {
   const viewRef = useRef<EditorView | null>(null);
   const contentRef = useRef(content);
   const onEditorReadyRef = useRef(onEditorReady);
+  const onScrollerReadyRef = useRef(onScrollerReady);
   const setContentRef = useRef(setContent);
   const setCursorPositionRef = useRef(setCursorPosition);
   const setSelectionRef = useRef(setSelection);
 
   useEffect(() => {
     onEditorReadyRef.current = onEditorReady;
+    onScrollerReadyRef.current = onScrollerReady;
     setContentRef.current = setContent;
     setCursorPositionRef.current = setCursorPosition;
     setSelectionRef.current = setSelection;
-  }, [onEditorReady, setContent, setCursorPosition, setSelection]);
+  }, [onEditorReady, onScrollerReady, setContent, setCursorPosition, setSelection]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -123,9 +129,11 @@ export function MarkdownEditor({ onEditorReady }: MarkdownEditorProps = {}) {
 
     viewRef.current = view;
     onEditorReadyRef.current?.(view);
+    onScrollerReadyRef.current?.(view.scrollDOM);
     updateSelection(view.state);
 
     return () => {
+      onScrollerReadyRef.current?.(null);
       view.destroy();
       viewRef.current = null;
     };
