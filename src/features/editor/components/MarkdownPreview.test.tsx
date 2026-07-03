@@ -541,6 +541,24 @@ describe("MarkdownPreview", () => {
     expect(emphasis).toHaveTextContent("emphasized after slash");
   });
 
+  it("renders markdown entity references as text characters", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-markdown-entities",
+      content: [
+        "# Inline",
+        "",
+        "Use AT&amp;T &lt;release&gt; &#x2713; &#10003; &quot;quoted&quot;.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    expect(
+      screen.getByText('Use AT&T <release> ✓ ✓ "quoted".'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/&amp;|&lt;|&#x2713;|&#10003;|&quot;/)).not.toBeInTheDocument();
+  });
+
   it("renders double-backtick inline code spans", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-double-backtick-inline-code",

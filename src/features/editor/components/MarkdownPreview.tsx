@@ -352,7 +352,7 @@ function renderInline(text: string): ReactNode[] {
 }
 
 function pushTextWithLineBreaks(nodes: ReactNode[], text: string, keyPrefix: number) {
-  const parts = unescapeMarkdownPunctuation(text).split("\n");
+  const parts = decodeMarkdownEntities(unescapeMarkdownPunctuation(text)).split("\n");
 
   parts.forEach((part, index) => {
     if (part) {
@@ -367,6 +367,42 @@ function pushTextWithLineBreaks(nodes: ReactNode[], text: string, keyPrefix: num
 
 function unescapeMarkdownPunctuation(text: string) {
   return text.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
+}
+
+function decodeMarkdownEntities(text: string) {
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    lt: "<",
+    quot: '"',
+  };
+
+  return text.replace(/&(#x[0-9A-Fa-f]+|#[0-9]+|[A-Za-z][A-Za-z0-9]+);/g, (source, entity) => {
+    if (entity.startsWith("#x")) {
+      return decodeCodePoint(entity.slice(2), 16) ?? source;
+    }
+
+    if (entity.startsWith("#")) {
+      return decodeCodePoint(entity.slice(1), 10) ?? source;
+    }
+
+    return namedEntities[entity] ?? source;
+  });
+}
+
+function decodeCodePoint(value: string, radix: 10 | 16) {
+  const codePoint = Number.parseInt(value, radix);
+
+  if (!Number.isSafeInteger(codePoint)) {
+    return null;
+  }
+
+  try {
+    return String.fromCodePoint(codePoint);
+  } catch {
+    return null;
+  }
 }
 
 function isEscapedMarkdownMarker(text: string, markerIndex: number) {
