@@ -20,6 +20,11 @@ type MarkdownTaskListItem = {
 
 type MarkdownTableAlignment = "left" | "center" | "right" | null;
 
+type LinkDefinition = {
+  href: string;
+  title: string | null;
+};
+
 type MarkdownBlock =
   | { type: "heading"; depth: 1 | 2 | 3 | 4 | 5 | 6; text: string }
   | { type: "paragraph"; text: string }
@@ -161,12 +166,12 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     const referenceImage = trimmed.match(/^!\[([^\]]*)\]\[([^\]]*)\]$/);
     if (referenceImage) {
       const referenceId = referenceImage[2].trim() || referenceImage[1].trim();
-      const src = linkDefinitions.get(referenceId.toLowerCase());
-      if (src) {
+      const definition = linkDefinitions.get(referenceId.toLowerCase());
+      if (definition) {
         blocks.push({
           type: "image",
           alt: referenceImage[1].trim(),
-          src,
+          src: definition.href,
         });
         index += 1;
         continue;
@@ -175,12 +180,12 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
 
     const shortcutReferenceImage = trimmed.match(/^!\[([^\]]*)\]$/);
     if (shortcutReferenceImage) {
-      const src = linkDefinitions.get(shortcutReferenceImage[1].trim().toLowerCase());
-      if (src) {
+      const definition = linkDefinitions.get(shortcutReferenceImage[1].trim().toLowerCase());
+      if (definition) {
         blocks.push({
           type: "image",
           alt: shortcutReferenceImage[1].trim(),
-          src,
+          src: definition.href,
         });
         index += 1;
         continue;
@@ -251,12 +256,15 @@ function escapeRegExp(value: string) {
 }
 
 function parseLinkDefinitions(lines: string[]) {
-  const definitions = new Map<string, string>();
+  const definitions = new Map<string, LinkDefinition>();
 
   for (const line of lines) {
     const definition = parseLinkDefinition(line.trim());
     if (definition) {
-      definitions.set(definition.id.toLowerCase(), definition.href);
+      definitions.set(definition.id.toLowerCase(), {
+        href: definition.href,
+        title: definition.title,
+      });
     }
   }
 
@@ -264,7 +272,9 @@ function parseLinkDefinitions(lines: string[]) {
 }
 
 function parseLinkDefinition(line: string) {
-  const definition = line.match(/^\[([^\]^][^\]]*)\]:\s+(https?:\/\/[^\s]+)$/);
+  const definition = line.match(
+    /^\[([^\]^][^\]]*)\]:\s+(https?:\/\/[^\s]+)(?:\s+"([^"]*)")?$/,
+  );
   if (!definition) {
     return null;
   }
@@ -272,23 +282,30 @@ function parseLinkDefinition(line: string) {
   return {
     href: definition[2],
     id: definition[1].trim(),
+    title: definition[3] ?? null,
   };
 }
 
-function applyReferenceLinks(text: string, definitions: Map<string, string>) {
+function applyReferenceLinks(text: string, definitions: Map<string, LinkDefinition>) {
   return text
     .replace(/\[([^\]]+)\]\[([^\]]+)\]/g, (source, label, id) => {
-      const href = definitions.get(id.trim().toLowerCase());
-      return href ? `[${label}](${href})` : source;
+      const definition = definitions.get(id.trim().toLowerCase());
+      return definition ? formatReferenceLink(label, definition) : source;
     })
     .replace(/\[([^\]]+)\]\[\]/g, (source, label) => {
-      const href = definitions.get(label.trim().toLowerCase());
-      return href ? `[${label}](${href})` : source;
+      const definition = definitions.get(label.trim().toLowerCase());
+      return definition ? formatReferenceLink(label, definition) : source;
     })
     .replace(/\[([^\]]+)\](?![[(])/g, (source, label) => {
-      const href = definitions.get(label.trim().toLowerCase());
-      return href ? `[${label}](${href})` : source;
+      const definition = definitions.get(label.trim().toLowerCase());
+      return definition ? formatReferenceLink(label, definition) : source;
     });
+}
+
+function formatReferenceLink(label: string, definition: LinkDefinition) {
+  return definition.title
+    ? `[${label}](${definition.href} "${definition.title}")`
+    : `[${label}](${definition.href})`;
 }
 
 function joinParagraphLines(lines: string[]) {
