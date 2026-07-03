@@ -514,6 +514,26 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders images with parenthesized title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-image-parenthesized-title",
+      content: [
+        "# Visual Notes",
+        "",
+        "![Preview map](https://example.com/map.png (Preview map))",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Preview map" });
+    expect(image).toHaveAttribute("src", "https://example.com/map.png");
+    expect(image).toHaveAttribute("title", "Preview map");
+    expect(
+      screen.queryByText("![Preview map](https://example.com/map.png (Preview map))"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders reference-style images", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-reference-image",
