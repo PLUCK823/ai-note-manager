@@ -105,13 +105,14 @@ function renderBlock(
     case "image":
       {
         const imageSrc = resolveImageSrc(block.src, context);
+        const imageAlt = renderInlineText(block.alt);
         if (!imageSrc) {
-          return <p key={key}>{`![${block.alt}](${block.src})`}</p>;
+          return <p key={key}>{`![${imageAlt}](${block.src})`}</p>;
         }
 
         return (
           <figure key={key} className="markdown-image">
-            <img alt={block.alt} src={imageSrc} />
+            <img alt={imageAlt} src={imageSrc} />
           </figure>
         );
       }

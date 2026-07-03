@@ -393,6 +393,25 @@ describe("MarkdownPreview", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders markdown entity references in image alt text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-image-alt-entities",
+      content: [
+        "# Visual Notes",
+        "",
+        "![Launch &amp; preview &lt;draft&gt;](https://example.com/preview.png)",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Launch & preview <draft>" });
+    expect(image).toHaveAttribute("src", "https://example.com/preview.png");
+    expect(
+      screen.queryByRole("img", { name: "Launch &amp; preview &lt;draft&gt;" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders reference-style images", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-reference-image",
