@@ -472,6 +472,45 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders inline images in paragraphs", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline-image",
+      content: [
+        "# Visual Notes",
+        "",
+        "Review ![Preview diagram](https://example.com/preview.png) before publishing.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Preview diagram" });
+    expect(image).toHaveAttribute("src", "https://example.com/preview.png");
+    expect(
+      screen.queryByRole("link", { name: "Preview diagram" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("![Preview diagram](https://example.com/preview.png)"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders inline images with empty alt text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-inline-image-empty-alt",
+      content: ["# Visual Notes", "", "Use ![](https://example.com/preview.png)."].join(
+        "\n",
+      ),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const image = container.querySelector('img[alt=""]');
+    expect(image).toHaveAttribute("src", "https://example.com/preview.png");
+    expect(
+      screen.queryByRole("link", { name: "https://example.com/preview.png" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders images with title text", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-image-title",
