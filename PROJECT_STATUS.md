@@ -2,7 +2,7 @@
 
 Date: 2026-07-03
 
-This document records the current implementation state of AI Note Manager after the first 80 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 81 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -246,15 +246,18 @@ This document records the current implementation state of AI Note Manager after 
 80. Markdown preview rendering supports reference-style image title text.
     Evidence: `parseMarkdownBlocks` now preserves optional double-quoted title text from safe http/https reference image definitions and `MarkdownPreview` renders it as an image `title` attribute while preserving existing safe image source handling. Frontend tests cover a reference-style image with definition title text.
 
+81. Markdown preview rendering supports shortcut reference-style image title text.
+    Evidence: `parseMarkdownBlocks` now also preserves optional double-quoted title text from safe http/https shortcut reference image definitions and `MarkdownPreview` renders it as an image `title` attribute while preserving existing safe image source handling. Frontend tests cover a shortcut reference-style image with definition title text.
+
 ## Verification
 
-The latest full verification for the reference-style image title completion point used:
+The latest full verification for the shortcut reference-style image title completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 77 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 78 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 36 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 

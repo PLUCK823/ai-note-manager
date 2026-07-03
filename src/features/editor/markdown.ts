@@ -190,7 +190,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
           type: "image",
           alt: shortcutReferenceImage[1].trim(),
           src: definition.href,
-          title: null,
+          title: definition.title,
         });
         index += 1;
         continue;
