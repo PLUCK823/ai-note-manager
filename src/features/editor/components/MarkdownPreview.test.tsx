@@ -494,6 +494,26 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders images with single-quoted title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-image-single-quoted-title",
+      content: [
+        "# Visual Notes",
+        "",
+        "![Preview chart](https://example.com/chart.png 'Preview chart')",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const image = screen.getByRole("img", { name: "Preview chart" });
+    expect(image).toHaveAttribute("src", "https://example.com/chart.png");
+    expect(image).toHaveAttribute("title", "Preview chart");
+    expect(
+      screen.queryByText("![Preview chart](https://example.com/chart.png 'Preview chart')"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders reference-style images", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-reference-image",

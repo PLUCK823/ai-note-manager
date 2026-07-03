@@ -152,13 +152,15 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
-    const image = trimmed.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)$/);
+    const image = trimmed.match(
+      /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'))?\)$/,
+    );
     if (image) {
       blocks.push({
         type: "image",
         alt: image[1].trim(),
         src: image[2],
-        title: image[3] ?? null,
+        title: image[3] ?? image[4] ?? null,
       });
       index += 1;
       continue;
@@ -231,7 +233,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         isSetextHeadingUnderline(next) ||
         /^>\s?/.test(next) ||
         parseTable(lines, index) ||
-        /^!\[[^\]]*\]\([^\s)]+(?:\s+"[^"]*")?\)$/.test(next) ||
+        /^!\[[^\]]*\]\([^\s)]+(?:\s+(?:"[^"]*"|'[^']*'))?\)$/.test(next) ||
         Boolean(parseTaskListItem(lines[index] ?? "")) ||
         Boolean(parseUnorderedListItem(lines[index] ?? "")) ||
         Boolean(parseOrderedListItem(lines[index] ?? ""))
