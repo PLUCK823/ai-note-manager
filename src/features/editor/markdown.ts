@@ -273,7 +273,7 @@ function parseLinkDefinitions(lines: string[]) {
 
 function parseLinkDefinition(line: string) {
   const definition = line.match(
-    /^\[([^\]^][^\]]*)\]:\s+(https?:\/\/[^\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'))?$/,
+    /^\[([^\]^][^\]]*)\]:\s+(https?:\/\/[^\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?$/,
   );
   if (!definition) {
     return null;
@@ -282,7 +282,7 @@ function parseLinkDefinition(line: string) {
   return {
     href: definition[2],
     id: definition[1].trim(),
-    title: definition[3] ?? definition[4] ?? null,
+    title: definition[3] ?? definition[4] ?? definition[5] ?? null,
   };
 }
 

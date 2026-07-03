@@ -803,6 +803,28 @@ describe("MarkdownPreview", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders reference-style links with parenthesized title text", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-reference-link-parenthesized-title",
+      content: [
+        "# References",
+        "",
+        "Review the [release guide][release-guide] before packaging.",
+        "",
+        "[release-guide]: https://example.com/guide (Release guide)",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const link = screen.getByRole("link", { name: "release guide" });
+    expect(link).toHaveAttribute("href", "https://example.com/guide");
+    expect(link).toHaveAttribute("title", "Release guide");
+    expect(
+      screen.queryByText("[release-guide]: https://example.com/guide (Release guide)"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders collapsed reference-style links", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-collapsed-reference-links",
