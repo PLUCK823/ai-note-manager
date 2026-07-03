@@ -523,6 +523,24 @@ describe("MarkdownPreview", () => {
     expect(screen.queryByRole("link", { name: "plain label" })).not.toBeInTheDocument();
   });
 
+  it("renders escaped backslashes before markdown formatting markers", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-escaped-backslash-before-formatting",
+      content: [
+        "# Inline",
+        "",
+        "Show \\\\*emphasized after slash*.",
+      ].join("\n"),
+    });
+
+    const { container } = render(<MarkdownPreview />);
+
+    const paragraph = container.querySelector(".markdown-preview-body p");
+    const emphasis = container.querySelector("p em");
+    expect(paragraph).toHaveTextContent("Show \\emphasized after slash.");
+    expect(emphasis).toHaveTextContent("emphasized after slash");
+  });
+
   it("renders double-backtick inline code spans", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-double-backtick-inline-code",

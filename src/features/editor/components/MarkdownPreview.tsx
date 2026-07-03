@@ -276,7 +276,7 @@ function renderList(
 function renderInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const inlinePattern =
-    /(?<!\\)``([^`]*(?:`[^`]+)*)``|(?<!\\)`([^`]+)`|(?<!\\)\*\*([^*]+)(?<!\\)\*\*|(?<!\\)\*([^*]+)(?<!\\)\*|(?<!\\)\[([^\]]+)(?<!\\)\]\((https?:\/\/[^)\s]+)\)|(?<!\\)\[\^([^\]]+)(?<!\\)\]|(?<!\\)<(https?:\/\/[^>\s]+)>|(?<!\\)<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|(?<!\\)~~([^~]+)(?<!\\)~~|(?<!\\)__([^_]+)(?<!\\)__|(?<!\\)_([^_]+)(?<!\\)_/g;
+    /``([^`]*(?:`[^`]+)*)``|`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\[\^([^\]]+)\]|<(https?:\/\/[^>\s]+)>|<([A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|~~([^~]+)~~|__([^_]+)__|_([^_]+)_/g;
   let lastIndex = 0;
 
   for (
@@ -284,6 +284,10 @@ function renderInline(text: string): ReactNode[] {
     match !== null;
     match = inlinePattern.exec(text)
   ) {
+    if (isEscapedMarkdownMarker(text, match.index)) {
+      continue;
+    }
+
     if (match.index > lastIndex) {
       pushTextWithLineBreaks(nodes, text.slice(lastIndex, match.index), lastIndex);
     }
@@ -363,4 +367,14 @@ function pushTextWithLineBreaks(nodes: ReactNode[], text: string, keyPrefix: num
 
 function unescapeMarkdownPunctuation(text: string) {
   return text.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
+}
+
+function isEscapedMarkdownMarker(text: string, markerIndex: number) {
+  let slashCount = 0;
+
+  for (let index = markerIndex - 1; index >= 0 && text[index] === "\\"; index -= 1) {
+    slashCount += 1;
+  }
+
+  return slashCount % 2 === 1;
 }
