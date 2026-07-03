@@ -175,7 +175,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
           type: "image",
           alt: referenceImage[1].trim(),
           src: definition.href,
-          title: null,
+          title: definition.title,
         });
         index += 1;
         continue;
