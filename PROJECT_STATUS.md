@@ -270,6 +270,9 @@ This document records the current implementation state of AI Note Manager after 
 88. AI assistant and vault navigation panes can swap positions.
     Evidence: `AppSettings` now includes `aiPaneOnLeft` boolean field defaulted to false. `AppLayout` extracts vault and AI pane JSX into named values and conditionally renders them in swapped order when `aiPaneOnLeft` is true, with corresponding resizer reordering. A swap button with an `ArrowLeftRight` icon in the workspace toolbar toggles the setting and persists it immediately. Rust tests cover `aiPaneOnLeft` serialization and default backfill. Frontend tests cover DOM order verification when swapped.
 
+92. Desktop-shell smoke test covers editor view mode switching.
+    Evidence: `shell-smoke.mjs` now verifies the editor mode segmented control is rendered after vault restore, clicks the Preview mode button and asserts the preview surface renders note content, clicks the Edit mode button and verifies the switch, then returns to Split mode for the remaining test steps. A shared `assertElementPresent` helper was added for reuse in future smoke tests. The smoke test still does not drive native OS file picker dialogs.
+
 91. Markdown preview renders multiline blockquote paragraphs.
     Evidence: `parseBlockquote` now treats blank `>` lines (lines with only the `>` marker and no content) as paragraph separators. `joinBlockquoteBody` groups adjacent non-empty lines into paragraphs joined by spaces, then joins those paragraph groups with `\n` separators that the inline renderer renders as `<br>` elements. Frontend tests cover two-paragraph blockquotes separated by an empty `>` marker line.
 
@@ -281,7 +284,7 @@ This document records the current implementation state of AI Note Manager after 
 
 ## Verification
 
-The latest full verification for the multiline blockquote paragraphs completion point used:
+The latest full verification for the desktop smoke editor mode switching completion point used:
 
 ```bash
 pnpm check
@@ -297,7 +300,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
    The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings and variable-length fences, indented code blocks, paragraph hard line breaks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, backslash-escaped punctuation including escaped backslashes before formatting markers, Markdown entity references in ordinary text, formatted inline text, and image alt text, strikethrough text, inline links with optional double-quoted, single-quoted, or parenthesized title text, full/collapsed/shortcut reference-style links with optional double-quoted, single-quoted, or parenthesized title text, HTTP and email autolinks, blockquotes including nested blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, pipe tables with or without outer pipes and column alignment, http/https images with optional double-quoted, single-quoted, or parenthesized title text, inline http/https images, local inline images, full/collapsed/shortcut reference-style images with optional double-quoted title text, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
-    The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.
+    The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, AI preview/apply behavior, and editor view mode switching (Edit/Split/Preview), but it does not yet drive native OS file picker dialogs or the new workspace toolbar controls (pane visibility toggles, pane position swap).
 
 3. Workspace layout customization is in its second phase.
    The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, pane sizes persist across restarts, the primary panes scroll independently, panes can be hidden and shown via toggle buttons, AI and vault panes can swap positions, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, and block-level editor/preview source mapping are not implemented yet.

@@ -82,6 +82,24 @@ try {
     assert.match(bodyText, /Desktop E2E Vault/i);
     assert.match(bodyText, /Desktop Smoke\.md/i);
 
+    // Verify editor mode buttons are rendered
+    await assertElementPresent(browser, '[aria-label="Editor view mode"]');
+    await clickButton(browser, "Preview");
+    await browser.waitUntil(
+      async () => {
+        const text = await bodyInnerText(browser);
+        return /Preview/i.test(text) && !/Nothing to preview yet/i.test(text);
+      },
+      { timeout: 10_000, timeoutMsg: "Timed out switching to Preview mode" },
+    );
+    await clickButton(browser, "Edit");
+    await browser.waitUntil(
+      async () => /Edit/i.test(await bodyInnerText(browser)),
+      { timeout: 10_000, timeoutMsg: "Timed out switching back to Edit mode" },
+    );
+    // Return to Split for the remaining tests
+    await clickButton(browser, "Split");
+
     await clickButton(browser, "Desktop Smoke.md");
     await browser.waitUntil(
       async () => /Loaded through the real Tauri shell\./i.test(await bodyInnerText(browser)),
@@ -191,6 +209,11 @@ async function searchResultsText(browser) {
     const results = document.querySelector('[aria-label="Search results"]');
     return results?.textContent ?? "";
   });
+}
+
+async function assertElementPresent(browser, selector) {
+  const present = await browser.execute((sel) => !!document.querySelector(sel), selector);
+  assert.ok(present, `Expected element matching "${selector}" to be present`);
 }
 
 async function aiPreviewText(browser) {
