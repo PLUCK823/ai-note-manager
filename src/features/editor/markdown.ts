@@ -378,7 +378,14 @@ function parseBlockquote(lines: string[], index: number, linkDefinitions: Map<st
 
   while (nextIndex < lines.length) {
     const raw = lines[nextIndex] ?? "";
-    const quote = raw.trim().match(/^>\s?(.*)$/);
+    const trimmed = raw.trim();
+    // Empty blockquote line (just '>') preserves paragraph break
+    if (trimmed === ">") {
+      bodyLines.push("");
+      nextIndex += 1;
+      continue;
+    }
+    const quote = trimmed.match(/^>\s?(.*)$/);
     if (!quote) {
       break;
     }
@@ -390,10 +397,11 @@ function parseBlockquote(lines: string[], index: number, linkDefinitions: Map<st
   const hasNested = bodyLines.some((line) => /^>\s?/.test(line));
 
   if (!hasNested) {
+    const text = joinBlockquoteBody(bodyLines);
     return {
       block: {
         type: "blockquote" as const,
-        text: applyReferenceLinks(bodyLines.map((l) => l.trim()).join(" "), linkDefinitions),
+        text: applyReferenceLinks(text, linkDefinitions),
         children: [] as MarkdownBlock[],
       },
       nextIndex,
@@ -425,6 +433,29 @@ function parseBlockquote(lines: string[], index: number, linkDefinitions: Map<st
     },
     nextIndex,
   };
+}
+
+function joinBlockquoteBody(lines: string[]) {
+  const paragraphs: string[] = [];
+  let current: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (current.length > 0) {
+        paragraphs.push(current.join(" "));
+        current = [];
+      }
+    } else {
+      current.push(trimmed);
+    }
+  }
+
+  if (current.length > 0) {
+    paragraphs.push(current.join(" "));
+  }
+
+  return paragraphs.join("\n");
 }
 
 function isThematicBreak(line: string) {

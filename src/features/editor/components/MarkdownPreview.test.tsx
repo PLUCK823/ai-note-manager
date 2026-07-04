@@ -738,6 +738,30 @@ describe("MarkdownPreview", () => {
     );
   });
 
+  it("renders blockquotes with multiple paragraphs separated by empty lines", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-blockquote-paragraphs",
+      content: [
+        "# Note",
+        "",
+        "> First paragraph.",
+        ">",
+        "> Second paragraph.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const quote = screen.getByRole("blockquote", {
+      name: "Markdown blockquote",
+    });
+    // The two paragraphs should be separated by a line break element
+    const brElements = quote.querySelectorAll("br");
+    expect(brElements.length).toBeGreaterThan(0);
+    expect(quote).toHaveTextContent(/First paragraph/);
+    expect(quote).toHaveTextContent(/Second paragraph/);
+  });
+
   it("renders nested blockquotes with inline markdown", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-nested-blockquote",
