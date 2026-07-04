@@ -270,18 +270,21 @@ This document records the current implementation state of AI Note Manager after 
 88. AI assistant and vault navigation panes can swap positions.
     Evidence: `AppSettings` now includes `aiPaneOnLeft` boolean field defaulted to false. `AppLayout` extracts vault and AI pane JSX into named values and conditionally renders them in swapped order when `aiPaneOnLeft` is true, with corresponding resizer reordering. A swap button with an `ArrowLeftRight` icon in the workspace toolbar toggles the setting and persists it immediately. Rust tests cover `aiPaneOnLeft` serialization and default backfill. Frontend tests cover DOM order verification when swapped.
 
+90. Markdown preview rendering strips HTML comments.
+    Evidence: `skipHtmlComment` detects lines starting with `<!--` and skips them (plus any continuation lines until `-->`). Single-line comments (opening and closing on the same line) are stripped. Multi-line comments are stripped in their entirety. Both are handled before any other block parsing so HTML content inside comments never leaks into rendered output. Frontend tests cover single-line and multi-line HTML comment stripping.
+
 89. Markdown preview rendering supports nested blockquotes.
     Evidence: The `blockquote` block type now includes a `children: MarkdownBlock[]` field. `parseBlockquote` strips one level of `>` prefix from each line, detects inner lines that still start with `>` as nested blockquotes, re-parses the stripped body through `parseMarkdownBlocks`, collects nested blockquote blocks as children, and keeps remaining paragraph text in the parent quote. `MarkdownPreview` renders nested blockquotes recursively inside their parent `<blockquote>` element. Frontend tests cover a two-level nested blockquote with inline text.
 
 ## Verification
 
-The latest full verification for the nested blockquote completion point used:
+The latest full verification for the HTML comment stripping completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 93 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 94 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 

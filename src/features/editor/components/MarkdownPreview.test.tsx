@@ -762,6 +762,34 @@ describe("MarkdownPreview", () => {
     })).toBeInTheDocument();
   });
 
+  it("strips HTML comments from rendered output", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-html-comments",
+      content: [
+        "# Note",
+        "",
+        "Visible paragraph.",
+        "",
+        "<!-- single-line comment -->",
+        "",
+        "<!--",
+        "multi-line",
+        "comment",
+        "-->",
+        "",
+        "Another visible paragraph.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    expect(screen.getByText("Visible paragraph.")).toBeInTheDocument();
+    expect(screen.getByText("Another visible paragraph.")).toBeInTheDocument();
+    expect(screen.queryByText("single-line comment")).not.toBeInTheDocument();
+    expect(screen.queryByText("multi-line")).not.toBeInTheDocument();
+    expect(screen.queryByText("comment")).not.toBeInTheDocument();
+  });
+
   it("renders inline code, bold, and italic text", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-inline",

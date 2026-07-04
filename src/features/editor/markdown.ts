@@ -59,6 +59,12 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
       continue;
     }
 
+    const htmlCommentResult = skipHtmlComment(lines, index);
+    if (htmlCommentResult) {
+      index = htmlCommentResult.nextIndex;
+      continue;
+    }
+
     const footnote = trimmed.match(/^\[\^([^\]]+)\]:\s+(.+)$/);
     if (footnote) {
       footnotes.push({ id: footnote[1].trim(), text: footnote[2].trim() });
@@ -623,6 +629,23 @@ function splitTableRow(line: string) {
     .replace(/\|$/, "")
     .split("|")
     .map((cell) => cell.trim());
+}
+
+function skipHtmlComment(lines: string[], index: number) {
+  const trimmed = lines[index]?.trim() ?? "";
+  if (!trimmed.startsWith("<!--")) {
+    return null;
+  }
+
+  if (trimmed.endsWith("-->")) {
+    return { nextIndex: index + 1 };
+  }
+
+  let nextIndex = index + 1;
+  while (nextIndex < lines.length && !(lines[nextIndex]?.trim() ?? "").endsWith("-->")) {
+    nextIndex += 1;
+  }
+  return { nextIndex: nextIndex + 1 };
 }
 
 function stripFrontmatter(content: string) {
