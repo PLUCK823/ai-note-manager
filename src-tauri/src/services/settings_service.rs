@@ -72,6 +72,7 @@ impl SettingsService {
             preview_pane_width: 360,
             left_pane_visible: true,
             right_pane_visible: true,
+            ai_pane_on_left: false,
         }
     }
 }
@@ -98,6 +99,7 @@ mod tests {
             preview_pane_width: 500,
             left_pane_visible: false,
             right_pane_visible: false,
+            ai_pane_on_left: true,
         };
 
         SettingsService::update_settings(&root, settings).unwrap();
@@ -112,6 +114,7 @@ mod tests {
         assert_eq!(loaded.preview_pane_width, 500);
         assert!(!loaded.left_pane_visible);
         assert!(!loaded.right_pane_visible);
+        assert!(loaded.ai_pane_on_left);
     }
 
     #[test]
@@ -185,6 +188,30 @@ mod tests {
 
         assert!(settings.left_pane_visible);
         assert!(settings.right_pane_visible);
+    }
+
+    #[test]
+    fn backfills_ai_pane_position_from_default() {
+        let root = test_root("backfill-ai-pane-position");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            SettingsService::settings_path(&root),
+            r#"{
+  "model": "gpt-4.1",
+  "aiReadScope": "current_note",
+  "autosave": true,
+  "leftPaneWidth": 300,
+  "rightPaneWidth": 400,
+  "previewPaneWidth": 500,
+  "leftPaneVisible": true,
+  "rightPaneVisible": true
+}"#,
+        )
+        .unwrap();
+
+        let settings = SettingsService::get_settings(&root).unwrap();
+
+        assert!(!settings.ai_pane_on_left);
     }
 
     #[test]

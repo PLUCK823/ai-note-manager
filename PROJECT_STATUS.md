@@ -267,15 +267,18 @@ This document records the current implementation state of AI Note Manager after 
 87. Workspace panes can be hidden and shown via toggle buttons.
     Evidence: `AppSettings` now includes `leftPaneVisible` and `rightPaneVisible` boolean fields defaulted to true. `AppLayout` conditionally renders the vault navigation pane and AI assistant pane based on these persisted visibility flags. When a pane is hidden, a floating toggle button appears at the edge to show it again. A toolbar in the workspace provides toggle buttons for both panes regardless of their current visibility state. CSS styles support hidden panes with zero width and absolute-positioned toggle buttons. Rust tests cover visibility serialization and default backfill. Frontend tests cover hidden pane rendering and toggle button presence.
 
+88. AI assistant and vault navigation panes can swap positions.
+    Evidence: `AppSettings` now includes `aiPaneOnLeft` boolean field defaulted to false. `AppLayout` extracts vault and AI pane JSX into named values and conditionally renders them in swapped order when `aiPaneOnLeft` is true, with corresponding resizer reordering. A swap button with an `ArrowLeftRight` icon in the workspace toolbar toggles the setting and persists it immediately. Rust tests cover `aiPaneOnLeft` serialization and default backfill. Frontend tests cover DOM order verification when swapped.
+
 ## Verification
 
-The latest full verification for the pane visibility toggle completion point used:
+The latest full verification for the pane position swap completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 91 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 40 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 92 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -288,15 +291,12 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.
 
 3. Workspace layout customization is in its second phase.
-   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, pane sizes persist across restarts, the primary panes scroll independently, panes can be hidden and shown via toggle buttons, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering, docking to other edges, and block-level editor/preview source mapping are not implemented yet.
+   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, pane sizes persist across restarts, the primary panes scroll independently, panes can be hidden and shown via toggle buttons, AI and vault panes can swap positions, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, and block-level editor/preview source mapping are not implemented yet.
 
 ## Next Priorities
 
-1. Continue workspace layout customization.
-   Add controlled panel ordering if day-to-day use proves the resizing, persistence, and visibility foundation stable.
-
-2. Continue Markdown preview fidelity improvements.
+1. Continue Markdown preview fidelity improvements.
    Add stricter CommonMark behavior if richer reading mode fidelity becomes important.
 
-3. Expand desktop-shell workflow coverage where practical.
+2. Expand desktop-shell workflow coverage where practical.
    Native OS file picker automation remains a separate platform-specific concern.

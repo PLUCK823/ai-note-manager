@@ -10,4 +10,5 @@ export type AppSettings = {
   previewPaneWidth: number;
   leftPaneVisible: boolean;
   rightPaneVisible: boolean;
+  aiPaneOnLeft: boolean;
 };

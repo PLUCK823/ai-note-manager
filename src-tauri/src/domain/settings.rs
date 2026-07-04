@@ -26,6 +26,8 @@ pub struct AppSettings {
     pub left_pane_visible: bool,
     #[serde(default = "default_true")]
     pub right_pane_visible: bool,
+    #[serde(default)]
+    pub ai_pane_on_left: bool,
 }
 
 fn default_true() -> bool {
@@ -71,6 +73,7 @@ mod tests {
             preview_pane_width: 360,
             left_pane_visible: true,
             right_pane_visible: true,
+            ai_pane_on_left: false,
         };
 
         let value = serde_json::to_value(settings).unwrap();
@@ -82,6 +85,7 @@ mod tests {
         assert_eq!(value["previewPaneWidth"], 360);
         assert_eq!(value["leftPaneVisible"], true);
         assert_eq!(value["rightPaneVisible"], true);
+        assert_eq!(value["aiPaneOnLeft"], false);
         assert!(value.get("ai_read_scope").is_none());
         assert!(value.get("sync_preview_scroll").is_none());
         assert!(value.get("left_pane_width").is_none());
@@ -89,5 +93,6 @@ mod tests {
         assert!(value.get("preview_pane_width").is_none());
         assert!(value.get("left_pane_visible").is_none());
         assert!(value.get("right_pane_visible").is_none());
+        assert!(value.get("ai_pane_on_left").is_none());
     }
 }

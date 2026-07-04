@@ -55,6 +55,7 @@ describe("App", () => {
       previewPaneWidth: 360,
       leftPaneVisible: true,
       rightPaneVisible: true,
+      aiPaneOnLeft: false,
     });
     updateSettingsMock.mockReset();
     updateSettingsMock.mockImplementation((input) => Promise.resolve(input));
@@ -230,6 +231,7 @@ describe("App", () => {
       previewPaneWidth: 360,
       leftPaneVisible: true,
       rightPaneVisible: true,
+      aiPaneOnLeft: false,
     });
     const { container } = render(
       <TestProviders>
@@ -282,6 +284,7 @@ describe("App", () => {
       previewPaneWidth: 450,
       leftPaneVisible: true,
       rightPaneVisible: true,
+      aiPaneOnLeft: false,
     });
 
     render(
@@ -326,6 +329,7 @@ describe("App", () => {
       previewPaneWidth: 360,
       leftPaneVisible: false,
       rightPaneVisible: true,
+      aiPaneOnLeft: false,
     });
 
     render(
@@ -359,6 +363,7 @@ describe("App", () => {
       previewPaneWidth: 360,
       leftPaneVisible: true,
       rightPaneVisible: false,
+      aiPaneOnLeft: false,
     });
 
     render(
@@ -379,6 +384,42 @@ describe("App", () => {
     // Right pane toggle button should be visible
     const showButtons = screen.getAllByLabelText("Show AI assistant");
     expect(showButtons.length).toBeGreaterThan(0);
+  });
+
+  it("swaps vault navigation and AI assistant panes when aiPaneOnLeft is true", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: true,
+      aiPaneOnLeft: true,
+    });
+
+    const { container } = render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    // Wait for settings to load and the shell to render
+    await screen.findByTestId("app-shell");
+
+    // When AI pane is on left, AI assistant should render first
+    await waitFor(() => {
+      expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
+      expect(screen.getByLabelText("Vault navigation")).toBeInTheDocument();
+    });
+
+    // Verify AI pane appears before vault navigation in DOM order
+    await waitFor(() => {
+      const allAsides = container.querySelectorAll('.app-shell > aside');
+      expect(allAsides[0]?.getAttribute("aria-label")).toBe("AI assistant");
+    });
   });
 
   it("toggles pane visibility buttons are present", async () => {

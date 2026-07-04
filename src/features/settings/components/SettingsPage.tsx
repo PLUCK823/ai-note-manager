@@ -15,6 +15,7 @@ const defaultSettings: AppSettings = {
   previewPaneWidth: 360,
   leftPaneVisible: true,
   rightPaneVisible: true,
+  aiPaneOnLeft: false,
 };
 
 export function SettingsPage() {

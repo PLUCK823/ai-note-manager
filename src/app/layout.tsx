@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, PanelRight, Search, Settings } from "lucide-react";
+import { ArrowLeftRight, FileText, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, PanelRight, Search, Settings } from "lucide-react";
 
 import { AiSidebar } from "../features/ai/components/AiSidebar";
 import { DiskChangeNotice } from "../features/editor/components/DiskChangeNotice";
@@ -59,6 +59,7 @@ export function AppLayout() {
   const syncPreviewScroll = settingsQuery.data?.syncPreviewScroll ?? true;
   const leftPaneVisible = settingsQuery.data?.leftPaneVisible ?? true;
   const rightPaneVisible = settingsQuery.data?.rightPaneVisible ?? true;
+  const aiPaneOnLeft = settingsQuery.data?.aiPaneOnLeft ?? false;
   // Derive actual pane widths from user modifications or persisted settings
   const leftWidth = userLeftWidth ?? settingsQuery.data?.leftPaneWidth ?? OUTER_LAYOUT_LIMITS.left.defaultValue;
   const rightWidth = userRightWidth ?? settingsQuery.data?.rightPaneWidth ?? OUTER_LAYOUT_LIMITS.right.defaultValue;
@@ -97,6 +98,17 @@ export function AppLayout() {
     const updatedSettings = {
       ...settingsQuery.data,
       rightPaneVisible: !rightPaneVisible,
+    };
+    updateSettings(updatedSettings).then((result) => {
+      queryClient.setQueryData(["settings"], result);
+    });
+  }
+
+  function toggleSwapPanes() {
+    if (!settingsQuery.data) return;
+    const updatedSettings = {
+      ...settingsQuery.data,
+      aiPaneOnLeft: !aiPaneOnLeft,
     };
     updateSettings(updatedSettings).then((result) => {
       queryClient.setQueryData(["settings"], result);
@@ -196,47 +208,79 @@ export function AppLayout() {
     };
   }, [editorMode, editorScroller, previewSurface, syncPreviewScroll]);
 
+  const vaultPane = leftPaneVisible ? (
+    <aside className="vault-pane" aria-label="Vault navigation">
+      <div className="brand-bar">
+        <div>
+          <p className="eyebrow">Local Markdown</p>
+          <h1>AI Note Manager</h1>
+        </div>
+        <Button type="button" variant="ghost" aria-label="Settings">
+          <Settings size={18} aria-hidden="true" />
+        </Button>
+      </div>
+      <VaultPicker />
+      <VaultStatus />
+      <SearchBox />
+      <SearchResults />
+      <FileTree />
+    </aside>
+  ) : null;
+
+  const vaultResizer = leftPaneVisible ? (
+    <ResizeSeparator
+      ariaLabel="Resize file navigation"
+      className="workspace-resizer workspace-resizer-left"
+      max={OUTER_LAYOUT_LIMITS.left.max}
+      min={OUTER_LAYOUT_LIMITS.left.min}
+      value={leftWidth}
+      onResize={handleLeftWidthChange}
+    />
+  ) : (
+    <Button
+      type="button"
+      variant="ghost"
+      className="pane-toggle pane-toggle-left"
+      aria-label="Show file navigation"
+      onClick={toggleLeftPane}
+    >
+      <PanelLeftOpen size={18} aria-hidden="true" />
+    </Button>
+  );
+
+  const aiPane = rightPaneVisible ? <AiSidebar /> : null;
+
+  const aiResizer = rightPaneVisible ? (
+    <ResizeSeparator
+      ariaLabel="Resize AI assistant"
+      className="workspace-resizer workspace-resizer-right"
+      max={OUTER_LAYOUT_LIMITS.right.max}
+      min={OUTER_LAYOUT_LIMITS.right.min}
+      value={rightWidth}
+      onResize={handleRightWidthChange}
+      reverse
+    />
+  ) : (
+    <Button
+      type="button"
+      variant="ghost"
+      className="pane-toggle pane-toggle-right"
+      aria-label="Show AI assistant"
+      onClick={toggleRightPane}
+    >
+      <PanelRightOpen size={18} aria-hidden="true" />
+    </Button>
+  );
+
+  const firstPane = aiPaneOnLeft ? aiPane : vaultPane;
+  const firstResizer = aiPaneOnLeft ? aiResizer : vaultResizer;
+  const secondPane = aiPaneOnLeft ? vaultPane : aiPane;
+  const secondResizer = aiPaneOnLeft ? vaultResizer : aiResizer;
+
   return (
     <div className="app-shell" data-testid="app-shell" style={shellStyle}>
-      {leftPaneVisible ? (
-        <aside className="vault-pane" aria-label="Vault navigation">
-          <div className="brand-bar">
-            <div>
-              <p className="eyebrow">Local Markdown</p>
-              <h1>AI Note Manager</h1>
-            </div>
-            <Button type="button" variant="ghost" aria-label="Settings">
-              <Settings size={18} aria-hidden="true" />
-            </Button>
-          </div>
-          <VaultPicker />
-          <VaultStatus />
-          <SearchBox />
-          <SearchResults />
-          <FileTree />
-        </aside>
-      ) : null}
-
-      {leftPaneVisible ? (
-        <ResizeSeparator
-          ariaLabel="Resize file navigation"
-          className="workspace-resizer workspace-resizer-left"
-          max={OUTER_LAYOUT_LIMITS.left.max}
-          min={OUTER_LAYOUT_LIMITS.left.min}
-          value={leftWidth}
-          onResize={handleLeftWidthChange}
-        />
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          className="pane-toggle pane-toggle-left"
-          aria-label="Show file navigation"
-          onClick={toggleLeftPane}
-        >
-          <PanelLeftOpen size={18} aria-hidden="true" />
-        </Button>
-      )}
+      {firstPane}
+      {firstResizer}
 
       <main className="workspace" aria-label="Note workspace">
         <div className="workspace-toolbar-top">
@@ -263,6 +307,14 @@ export function AppLayout() {
             ) : (
               <PanelRightOpen size={16} aria-hidden="true" />
             )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label={aiPaneOnLeft ? "Move AI assistant to right" : "Move AI assistant to left"}
+            onClick={toggleSwapPanes}
+          >
+            <ArrowLeftRight size={16} aria-hidden="true" />
           </Button>
         </div>
         <NoteTabs />
@@ -320,29 +372,8 @@ export function AppLayout() {
         </section>
       </main>
 
-      {rightPaneVisible ? (
-        <ResizeSeparator
-          ariaLabel="Resize AI assistant"
-          className="workspace-resizer workspace-resizer-right"
-          max={OUTER_LAYOUT_LIMITS.right.max}
-          min={OUTER_LAYOUT_LIMITS.right.min}
-          value={rightWidth}
-          onResize={handleRightWidthChange}
-          reverse
-        />
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          className="pane-toggle pane-toggle-right"
-          aria-label="Show AI assistant"
-          onClick={toggleRightPane}
-        >
-          <PanelRightOpen size={18} aria-hidden="true" />
-        </Button>
-      )}
-
-      {rightPaneVisible ? <AiSidebar /> : null}
+      {secondResizer}
+      {secondPane}
 
       <footer className="status-bar" aria-label="Application status">
         <span>
