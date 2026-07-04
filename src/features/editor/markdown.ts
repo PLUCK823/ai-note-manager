@@ -28,7 +28,7 @@ type LinkDefinition = {
 type MarkdownBlock =
   | { type: "heading"; depth: 1 | 2 | 3 | 4 | 5 | 6; text: string }
   | { type: "paragraph"; text: string }
-  | { type: "blockquote"; text: string }
+  | { type: "blockquote"; text: string; children: MarkdownBlock[] }
   | { type: "unorderedList"; items: MarkdownListItem[] }
   | { type: "orderedList"; items: MarkdownListItem[]; start: number }
   | { type: "taskList"; items: MarkdownTaskListItem[] }
@@ -129,19 +129,9 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     }
 
     if (/^>\s?/.test(trimmed)) {
-      const quoteLines: string[] = [];
-      while (index < lines.length) {
-        const quote = lines[index]?.trim().match(/^>\s?(.*)$/);
-        if (!quote) {
-          break;
-        }
-        quoteLines.push(quote[1].trim());
-        index += 1;
-      }
-      blocks.push({
-        type: "blockquote",
-        text: applyReferenceLinks(quoteLines.join(" "), linkDefinitions),
-      });
+      const blockquote = parseBlockquote(lines, index, linkDefinitions);
+      blocks.push(blockquote.block);
+      index = blockquote.nextIndex;
       continue;
     }
 
@@ -374,6 +364,61 @@ function parseSetextHeading(lines: string[], index: number) {
 
 function isSetextHeadingUnderline(line: string) {
   return /^(=+|-+)\s*$/.test(line);
+}
+
+function parseBlockquote(lines: string[], index: number, linkDefinitions: Map<string, LinkDefinition>) {
+  const bodyLines: string[] = [];
+  let nextIndex = index;
+
+  while (nextIndex < lines.length) {
+    const raw = lines[nextIndex] ?? "";
+    const quote = raw.trim().match(/^>\s?(.*)$/);
+    if (!quote) {
+      break;
+    }
+    bodyLines.push(quote[1] ?? "");
+    nextIndex += 1;
+  }
+
+  // Check for nested blockquotes in the stripped body
+  const hasNested = bodyLines.some((line) => /^>\s?/.test(line));
+
+  if (!hasNested) {
+    return {
+      block: {
+        type: "blockquote" as const,
+        text: applyReferenceLinks(bodyLines.map((l) => l.trim()).join(" "), linkDefinitions),
+        children: [] as MarkdownBlock[],
+      },
+      nextIndex,
+    };
+  }
+
+  // Reparse stripped body to find nested blockquotes and other blocks
+  const body = bodyLines.join("\n");
+  const nestedBlocks = parseMarkdownBlocks(body);
+  // Filter out nested blockquotes as children, keep rest as text
+  const children: MarkdownBlock[] = [];
+  const textParts: string[] = [];
+
+  for (const block of nestedBlocks) {
+    if (block.type === "blockquote") {
+      children.push(block);
+    } else if (block.type === "paragraph") {
+      textParts.push(block.text);
+    } else {
+      children.push(block);
+    }
+  }
+
+  return {
+    block: {
+      type: "blockquote" as const,
+      text: textParts.join(" "),
+      children,
+    },
+    nextIndex,
+  };
 }
 
 function isThematicBreak(line: string) {

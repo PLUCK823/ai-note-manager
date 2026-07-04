@@ -54,7 +54,10 @@ function renderBlock(
     case "blockquote":
       return (
         <blockquote key={key} aria-label="Markdown blockquote" role="blockquote">
-          {renderInline(block.text, context)}
+          {block.text ? renderInline(block.text, context) : null}
+          {block.children.map((child, childIndex) =>
+            renderBlock(child, childIndex, context),
+          )}
         </blockquote>
       );
     case "unorderedList":

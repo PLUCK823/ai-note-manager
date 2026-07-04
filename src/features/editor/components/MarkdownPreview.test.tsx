@@ -738,6 +738,30 @@ describe("MarkdownPreview", () => {
     );
   });
 
+  it("renders nested blockquotes with inline markdown", () => {
+    useEditorStore.getState().loadContent({
+      baseHash: "hash-nested-blockquote",
+      content: [
+        "# Discussion",
+        "",
+        "> Outer context.",
+        "> > Inner clarification.",
+      ].join("\n"),
+    });
+
+    render(<MarkdownPreview />);
+
+    const quotes = screen.getAllByRole("blockquote", {
+      name: "Markdown blockquote",
+    });
+    expect(quotes).toHaveLength(2);
+    expect(quotes[0]).toHaveTextContent(/Outer context/);
+    expect(quotes[1]).toHaveTextContent(/Inner clarification/);
+    expect(within(quotes[0]).getByRole("blockquote", {
+      name: "Markdown blockquote",
+    })).toBeInTheDocument();
+  });
+
   it("renders inline code, bold, and italic text", () => {
     useEditorStore.getState().loadContent({
       baseHash: "hash-inline",
