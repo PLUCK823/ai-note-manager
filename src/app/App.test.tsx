@@ -1,12 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 
 import { useVaultStore } from "../features/vault/hooks";
 import { App } from "./App";
-import { Providers } from "./providers";
 
 const getRecentVaultMock = vi.fn();
 const getSettingsMock = vi.fn();
+const updateSettingsMock = vi.fn();
 
 vi.mock("../features/vault/api", () => ({
   getRecentVault: () => getRecentVaultMock(),
@@ -15,9 +17,28 @@ vi.mock("../features/vault/api", () => ({
 
 vi.mock("../features/settings/api", () => ({
   getSettings: () => getSettingsMock(),
-  updateSettings: vi.fn(),
+  updateSettings: (input: unknown) => updateSettingsMock(input),
   saveApiKey: vi.fn(),
 }));
+
+function TestProviders({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            refetchOnWindowFocus: false,
+            gcTime: 0,
+          },
+        },
+      }),
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
 
 describe("App", () => {
   beforeEach(() => {
@@ -29,15 +50,22 @@ describe("App", () => {
       aiReadScope: "current_note",
       autosave: true,
       syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: true,
     });
+    updateSettingsMock.mockReset();
+    updateSettingsMock.mockImplementation((input) => Promise.resolve(input));
     useVaultStore.getState().setCurrentVault(null);
   });
 
   it("renders the initialized note manager workspace shell", () => {
     render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     expect(
@@ -59,9 +87,9 @@ describe("App", () => {
 
   it("switches between edit, split, and preview editor modes", () => {
     render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     expect(
@@ -88,9 +116,9 @@ describe("App", () => {
 
   it("resizes the outer workspace panes with separator handles", () => {
     render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     const shell = screen.getByTestId("app-shell");
@@ -121,9 +149,9 @@ describe("App", () => {
 
   it("resizes the editor and preview panes in split mode", () => {
     render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     const shell = screen.getByTestId("app-shell");
@@ -149,9 +177,9 @@ describe("App", () => {
 
   it("syncs preview scrolling from the editor in split mode", async () => {
     const { container } = render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     await screen.findByLabelText("Sync editor and preview scrolling");
@@ -171,9 +199,9 @@ describe("App", () => {
 
   it("syncs editor scrolling from the preview in split mode", async () => {
     const { container } = render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     await screen.findByLabelText("Sync editor and preview scrolling");
@@ -197,11 +225,16 @@ describe("App", () => {
       aiReadScope: "current_note",
       autosave: true,
       syncPreviewScroll: false,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: true,
     });
     const { container } = render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     const syncToggle = await screen.findByLabelText(
@@ -229,13 +262,177 @@ describe("App", () => {
     });
 
     render(
-      <Providers>
+      <TestProviders>
         <App />
-      </Providers>,
+      </TestProviders>,
     );
 
     expect(await screen.findByText("notes")).toBeInTheDocument();
     expect(screen.getByText("/Users/test/notes")).toBeInTheDocument();
+  });
+
+  it("restores persisted pane widths from settings", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 320,
+      rightPaneWidth: 400,
+      previewPaneWidth: 450,
+      leftPaneVisible: true,
+      rightPaneVisible: true,
+    });
+
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    // Wait for settings to load
+    await screen.findByTestId("app-shell");
+
+    const vaultSeparator = screen.getByRole("separator", {
+      name: "Resize file navigation",
+    });
+    const aiSeparator = screen.getByRole("separator", {
+      name: "Resize AI assistant",
+    });
+    const splitSeparator = screen.getByRole("separator", {
+      name: "Resize editor and preview",
+    });
+
+    // After settings load, pane widths should be restored
+    await waitFor(() => {
+      expect(vaultSeparator).toHaveAttribute("aria-valuenow", "320");
+    });
+    await waitFor(() => {
+      expect(aiSeparator).toHaveAttribute("aria-valuenow", "400");
+    });
+    await waitFor(() => {
+      expect(splitSeparator).toHaveAttribute("aria-valuenow", "450");
+    });
+  });
+
+  it("hides the left pane when leftPaneVisible is false", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: false,
+      rightPaneVisible: true,
+    });
+
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    // Wait for settings to load
+    await screen.findByTestId("app-shell");
+
+    // Left pane should not be visible
+    await waitFor(() => {
+      expect(screen.queryByLabelText("Vault navigation")).not.toBeInTheDocument();
+    });
+    // Left pane toggle button should be visible (the floating one when pane is hidden)
+    const showButtons = screen.getAllByLabelText("Show file navigation");
+    expect(showButtons.length).toBeGreaterThan(0);
+    // Right pane should still be visible
+    expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
+  });
+
+  it("hides the right pane when rightPaneVisible is false", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: false,
+    });
+
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    // Wait for settings to load
+    await screen.findByTestId("app-shell");
+
+    // Left pane should be visible
+    expect(screen.getByLabelText("Vault navigation")).toBeInTheDocument();
+    // Right pane should not be visible
+    await waitFor(() => {
+      expect(screen.queryByLabelText("AI assistant")).not.toBeInTheDocument();
+    });
+    // Right pane toggle button should be visible
+    const showButtons = screen.getAllByLabelText("Show AI assistant");
+    expect(showButtons.length).toBeGreaterThan(0);
+  });
+
+  it("toggles pane visibility buttons are present", async () => {
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    await screen.findByTestId("app-shell");
+
+    // Left pane should be visible initially
+    expect(screen.getByLabelText("Vault navigation")).toBeInTheDocument();
+
+    // Toggle buttons should be present in the toolbar
+    const hideLeftButtons = screen.getAllByLabelText("Hide file navigation");
+    const hideRightButtons = screen.getAllByLabelText("Hide AI assistant");
+
+    expect(hideLeftButtons.length).toBeGreaterThan(0);
+    expect(hideRightButtons.length).toBeGreaterThan(0);
+  });
+
+  it("debounces pane width updates to settings", async () => {
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    await screen.findByTestId("app-shell");
+
+    const vaultSeparator = screen.getByRole("separator", {
+      name: "Resize file navigation",
+    });
+
+    // Resize the left pane
+    fireEvent.pointerDown(vaultSeparator, { clientX: 288, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 320, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+
+    // Settings should not be updated immediately
+    expect(updateSettingsMock).not.toHaveBeenCalled();
+
+    // Wait for the debounce delay
+    await waitFor(
+      () => {
+        expect(updateSettingsMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            leftPaneWidth: 320,
+          }),
+        );
+      },
+      { timeout: 1000 },
+    );
   });
 });
 

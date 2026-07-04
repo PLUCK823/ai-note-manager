@@ -67,6 +67,11 @@ impl SettingsService {
             ai_read_scope: AiReadScope::CurrentNote,
             autosave: true,
             sync_preview_scroll: true,
+            left_pane_width: 288,
+            right_pane_width: 336,
+            preview_pane_width: 360,
+            left_pane_visible: true,
+            right_pane_visible: true,
         }
     }
 }
@@ -88,6 +93,11 @@ mod tests {
             ai_read_scope: AiReadScope::LinkedNotes,
             autosave: false,
             sync_preview_scroll: false,
+            left_pane_width: 300,
+            right_pane_width: 400,
+            preview_pane_width: 500,
+            left_pane_visible: false,
+            right_pane_visible: false,
         };
 
         SettingsService::update_settings(&root, settings).unwrap();
@@ -97,6 +107,11 @@ mod tests {
         assert!(matches!(loaded.ai_read_scope, AiReadScope::LinkedNotes));
         assert!(!loaded.autosave);
         assert!(!loaded.sync_preview_scroll);
+        assert_eq!(loaded.left_pane_width, 300);
+        assert_eq!(loaded.right_pane_width, 400);
+        assert_eq!(loaded.preview_pane_width, 500);
+        assert!(!loaded.left_pane_visible);
+        assert!(!loaded.right_pane_visible);
     }
 
     #[test]
@@ -126,6 +141,50 @@ mod tests {
 
         assert_eq!(settings.model, "gpt-4.1");
         assert!(settings.sync_preview_scroll);
+    }
+
+    #[test]
+    fn backfills_pane_widths_from_defaults() {
+        let root = test_root("backfill-pane-widths");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            SettingsService::settings_path(&root),
+            r#"{
+  "model": "gpt-4.1",
+  "aiReadScope": "current_note",
+  "autosave": true
+}"#,
+        )
+        .unwrap();
+
+        let settings = SettingsService::get_settings(&root).unwrap();
+
+        assert_eq!(settings.left_pane_width, 288);
+        assert_eq!(settings.right_pane_width, 336);
+        assert_eq!(settings.preview_pane_width, 360);
+    }
+
+    #[test]
+    fn backfills_pane_visibility_from_defaults() {
+        let root = test_root("backfill-pane-visibility");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            SettingsService::settings_path(&root),
+            r#"{
+  "model": "gpt-4.1",
+  "aiReadScope": "current_note",
+  "autosave": true,
+  "leftPaneWidth": 300,
+  "rightPaneWidth": 400,
+  "previewPaneWidth": 500
+}"#,
+        )
+        .unwrap();
+
+        let settings = SettingsService::get_settings(&root).unwrap();
+
+        assert!(settings.left_pane_visible);
+        assert!(settings.right_pane_visible);
     }
 
     #[test]

@@ -10,6 +10,11 @@ const defaultSettings: AppSettings = {
   aiReadScope: "current_note",
   autosave: true,
   syncPreviewScroll: true,
+  leftPaneWidth: 288,
+  rightPaneWidth: 336,
+  previewPaneWidth: 360,
+  leftPaneVisible: true,
+  rightPaneVisible: true,
 };
 
 export function SettingsPage() {

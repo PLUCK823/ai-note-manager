@@ -261,15 +261,21 @@ This document records the current implementation state of AI Note Manager after 
 85. Split-mode editor and preview scrolling sync by default.
     Evidence: `AppLayout` now reads the shared settings query and synchronizes CodeMirror and Markdown preview scroll positions by proportional vertical scroll when Split mode is active. `SettingsPage` exposes a default-on `Sync editor and preview scrolling` setting backed by the persisted Tauri settings contract, and tests cover both scroll directions plus the disabled setting. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-04-synced-editor-preview-scroll-design.md` and `docs/superpowers/plans/2026-07-04-synced-editor-preview-scroll.md`.
 
+86. Workspace pane sizes persist across app restarts.
+    Evidence: `AppSettings` now includes `leftPaneWidth`, `rightPaneWidth`, and `previewPaneWidth` fields with default values matching the initial layout. `AppLayout` reads persisted pane widths from the settings query and applies them when settings arrive. User-initiated pane resize operations debounced-save to the settings contract through `updateSettings`. Rust tests cover pane width serialization, default backfill for existing settings files, and persistence round-trips. Frontend tests cover persisted pane width restoration and debounced updates.
+
+87. Workspace panes can be hidden and shown via toggle buttons.
+    Evidence: `AppSettings` now includes `leftPaneVisible` and `rightPaneVisible` boolean fields defaulted to true. `AppLayout` conditionally renders the vault navigation pane and AI assistant pane based on these persisted visibility flags. When a pane is hidden, a floating toggle button appears at the edge to show it again. A toolbar in the workspace provides toggle buttons for both panes regardless of their current visibility state. CSS styles support hidden panes with zero width and absolute-positioned toggle buttons. Rust tests cover visibility serialization and default backfill. Frontend tests cover hidden pane rendering and toggle button presence.
+
 ## Verification
 
-The latest full verification for the synced editor/preview scroll completion point used:
+The latest full verification for the pane visibility toggle completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 86 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 38 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 91 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 40 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -281,13 +287,13 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, and AI preview/apply behavior, but it does not yet drive native OS file picker dialogs.
 
-3. Workspace layout customization is in its first phase.
-   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, the primary panes scroll independently, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering, docking to other edges, hiding panels, persisted layout preferences, and block-level editor/preview source mapping are not implemented yet.
+3. Workspace layout customization is in its second phase.
+   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, pane sizes persist across restarts, the primary panes scroll independently, panes can be hidden and shown via toggle buttons, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering, docking to other edges, and block-level editor/preview source mapping are not implemented yet.
 
 ## Next Priorities
 
 1. Continue workspace layout customization.
-   Persist pane sizes and add controlled panel ordering once the resizing foundation is proven in day-to-day use.
+   Add controlled panel ordering if day-to-day use proves the resizing, persistence, and visibility foundation stable.
 
 2. Continue Markdown preview fidelity improvements.
    Add stricter CommonMark behavior if richer reading mode fidelity becomes important.
