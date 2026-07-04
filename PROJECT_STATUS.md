@@ -270,6 +270,9 @@ This document records the current implementation state of AI Note Manager after 
 88. AI assistant and vault navigation panes can swap positions.
     Evidence: `AppSettings` now includes `aiPaneOnLeft` boolean field defaulted to false. `AppLayout` extracts vault and AI pane JSX into named values and conditionally renders them in swapped order when `aiPaneOnLeft` is true, with corresponding resizer reordering. A swap button with an `ArrowLeftRight` icon in the workspace toolbar toggles the setting and persists it immediately. Rust tests cover `aiPaneOnLeft` serialization and default backfill. Frontend tests cover DOM order verification when swapped.
 
+93. Settings page exposes workspace layout controls for pane visibility and position.
+    Evidence: `SettingsPage` now includes checkboxes for "Show file navigation" (`leftPaneVisible`), "Show AI assistant" (`rightPaneVisible`), and "AI assistant on left side" (`aiPaneOnLeft`). These controls provide the same toggling capability as the toolbar buttons in the workspace, giving users a centralized place to configure their layout preferences.
+
 92. Desktop-shell smoke test covers editor view mode switching.
     Evidence: `shell-smoke.mjs` now verifies the editor mode segmented control is rendered after vault restore, clicks the Preview mode button and asserts the preview surface renders note content, clicks the Edit mode button and verifies the switch, then returns to Split mode for the remaining test steps. A shared `assertElementPresent` helper was added for reuse in future smoke tests. The smoke test still does not drive native OS file picker dialogs.
 
@@ -302,8 +305,8 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, AI preview/apply behavior, and editor view mode switching (Edit/Split/Preview), but it does not yet drive native OS file picker dialogs or the new workspace toolbar controls (pane visibility toggles, pane position swap).
 
-3. Workspace layout customization is in its second phase.
-   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, pane sizes persist across restarts, the primary panes scroll independently, panes can be hidden and shown via toggle buttons, AI and vault panes can swap positions, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, and block-level editor/preview source mapping are not implemented yet.
+3. Workspace layout customization is in its third phase.
+   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can now be resized, pane sizes persist across restarts, the primary panes scroll independently, panes can be hidden and shown via toggle buttons both in the toolbar and in the Settings page, AI and vault panes can swap positions, and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, and block-level editor/preview source mapping are not implemented yet.
 
 ## Next Priorities
 

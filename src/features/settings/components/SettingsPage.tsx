@@ -114,6 +114,48 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
           />
           Sync editor and preview scrolling
         </label>
+        <label className="checkbox-label">
+          <input
+            checked={settings.leftPaneVisible}
+            type="checkbox"
+            onChange={(event) => {
+              const leftPaneVisible = event.currentTarget.checked;
+              setSettings((current) => ({
+                ...current,
+                leftPaneVisible,
+              }));
+            }}
+          />
+          Show file navigation
+        </label>
+        <label className="checkbox-label">
+          <input
+            checked={settings.rightPaneVisible}
+            type="checkbox"
+            onChange={(event) => {
+              const rightPaneVisible = event.currentTarget.checked;
+              setSettings((current) => ({
+                ...current,
+                rightPaneVisible,
+              }));
+            }}
+          />
+          Show AI assistant
+        </label>
+        <label className="checkbox-label">
+          <input
+            checked={settings.aiPaneOnLeft}
+            type="checkbox"
+            onChange={(event) => {
+              const aiPaneOnLeft = event.currentTarget.checked;
+              setSettings((current) => ({
+                ...current,
+                aiPaneOnLeft,
+              }));
+            }}
+          />
+          AI assistant on left side
+        </label>
         <label>
           API key
           <input
