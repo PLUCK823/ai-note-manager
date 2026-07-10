@@ -37,12 +37,14 @@ button {
 
 .app-shell {
   --ai-pane-width: 336px;
+  --first-pane-width: 288px;
   --preview-pane-width: 360px;
+  --second-pane-width: 336px;
   --vault-pane-width: 288px;
   display: grid;
   grid-template-columns:
-    var(--vault-pane-width) 8px minmax(460px, 1fr) 8px
-    var(--ai-pane-width);
+    var(--first-pane-width) 8px minmax(460px, 1fr) 8px
+    var(--second-pane-width);
   grid-template-rows: 1fr 34px;
   height: 100vh;
   min-height: 0;
@@ -73,7 +75,14 @@ button {
   flex-direction: column;
   gap: 14px;
   padding: 18px;
+}
+
+.vault-pane[data-edge="left"] {
   border-width: 0 1px 0 0;
+}
+
+.vault-pane[data-edge="right"] {
+  border-width: 0 0 0 1px;
 }
 
 .brand-bar,
@@ -331,27 +340,24 @@ button {
   padding: 0 6px;
 }
 
-.pane-toggle {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  min-width: 24px;
-  min-height: 48px;
-  border-radius: 0 6px 6px 0;
-  padding: 0 4px;
-  background: rgba(255, 252, 246, 0.9);
-  box-shadow: 1px 0 4px rgba(23, 32, 27, 0.1);
+.collapsed-pane-rail {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  min-height: calc(100vh - 34px);
+  padding: 8px 4px;
+  background: rgba(255, 252, 246, 0.92);
+  border-color: rgba(23, 32, 27, 0.16);
+  border-style: solid;
 }
 
-.pane-toggle-left {
-  left: 0;
+.collapsed-pane-rail[data-edge="left"] {
+  border-width: 0 1px 0 0;
 }
 
-.pane-toggle-right {
-  right: 0;
-  border-radius: 6px 0 0 6px;
-  box-shadow: -1px 0 4px rgba(23, 32, 27, 0.1);
+.collapsed-pane-rail[data-edge="right"] {
+  border-width: 0 0 0 1px;
 }
 
 .workspace-resizer {
@@ -859,6 +865,13 @@ button {
   flex-direction: column;
   gap: 14px;
   padding: 18px;
+}
+
+.ai-sidebar[data-edge="left"] {
+  border-width: 0 1px 0 0;
+}
+
+.ai-sidebar[data-edge="right"] {
   border-width: 0 0 0 1px;
 }
 

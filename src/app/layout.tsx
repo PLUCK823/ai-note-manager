@@ -1,6 +1,7 @@
 import {
   type CSSProperties,
   type PointerEvent,
+  type ReactNode,
   useEffect,
   useRef,
   useState,
@@ -33,6 +34,8 @@ const SPLIT_LAYOUT_LIMITS = {
   preview: { defaultValue: 360, min: 240, max: 640 },
 };
 
+const COLLAPSED_PANE_WIDTH = 44;
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
@@ -64,9 +67,15 @@ export function AppLayout() {
   const leftWidth = userLeftWidth ?? settingsQuery.data?.leftPaneWidth ?? OUTER_LAYOUT_LIMITS.left.defaultValue;
   const rightWidth = userRightWidth ?? settingsQuery.data?.rightPaneWidth ?? OUTER_LAYOUT_LIMITS.right.defaultValue;
   const previewWidth = userPreviewWidth ?? settingsQuery.data?.previewPaneWidth ?? SPLIT_LAYOUT_LIMITS.preview.defaultValue;
+  const vaultPaneWidth = leftPaneVisible ? leftWidth : COLLAPSED_PANE_WIDTH;
+  const aiPaneWidth = rightPaneVisible ? rightWidth : COLLAPSED_PANE_WIDTH;
+  const firstPaneWidth = aiPaneOnLeft ? aiPaneWidth : vaultPaneWidth;
+  const secondPaneWidth = aiPaneOnLeft ? vaultPaneWidth : aiPaneWidth;
   const shellStyle = {
-    "--vault-pane-width": leftPaneVisible ? `${leftWidth}px` : "0px",
-    "--ai-pane-width": rightPaneVisible ? `${rightWidth}px` : "0px",
+    "--vault-pane-width": `${vaultPaneWidth}px`,
+    "--ai-pane-width": `${aiPaneWidth}px`,
+    "--first-pane-width": `${firstPaneWidth}px`,
+    "--second-pane-width": `${secondPaneWidth}px`,
     "--preview-pane-width": `${previewWidth}px`,
   } as CSSProperties;
 
@@ -208,8 +217,23 @@ export function AppLayout() {
     };
   }, [editorMode, editorScroller, previewSurface, syncPreviewScroll]);
 
-  const vaultPane = leftPaneVisible ? (
-    <aside className="vault-pane" aria-label="Vault navigation">
+  function renderVaultItem(edge: "left" | "right") {
+    if (!leftPaneVisible) {
+      return (
+        <CollapsedPaneRail
+          ariaLabel="Collapsed file navigation"
+          edge={edge}
+          showLabel="Show file navigation"
+          onShow={toggleLeftPane}
+        >
+          <FileText size={18} aria-hidden="true" />
+        </CollapsedPaneRail>
+      );
+    }
+
+    return (
+      <>
+        <aside className="vault-pane" aria-label="Vault navigation" data-edge={edge}>
       <div className="brand-bar">
         <div>
           <p className="eyebrow">Local Markdown</p>
@@ -224,63 +248,60 @@ export function AppLayout() {
       <SearchBox />
       <SearchResults />
       <FileTree />
-    </aside>
-  ) : null;
+        </aside>
+        <ResizeSeparator
+          ariaLabel="Resize file navigation"
+          className="workspace-resizer"
+          max={OUTER_LAYOUT_LIMITS.left.max}
+          min={OUTER_LAYOUT_LIMITS.left.min}
+          value={leftWidth}
+          onResize={handleLeftWidthChange}
+          reverse={edge === "right"}
+        />
+      </>
+    );
+  }
 
-  const vaultResizer = leftPaneVisible ? (
-    <ResizeSeparator
-      ariaLabel="Resize file navigation"
-      className="workspace-resizer workspace-resizer-left"
-      max={OUTER_LAYOUT_LIMITS.left.max}
-      min={OUTER_LAYOUT_LIMITS.left.min}
-      value={leftWidth}
-      onResize={handleLeftWidthChange}
-    />
-  ) : (
-    <Button
-      type="button"
-      variant="ghost"
-      className="pane-toggle pane-toggle-left"
-      aria-label="Show file navigation"
-      onClick={toggleLeftPane}
-    >
-      <PanelLeftOpen size={18} aria-hidden="true" />
-    </Button>
-  );
+  function renderAiItem(edge: "left" | "right") {
+    if (!rightPaneVisible) {
+      return (
+        <CollapsedPaneRail
+          ariaLabel="Collapsed AI assistant"
+          edge={edge}
+          showLabel="Show AI assistant"
+          onShow={toggleRightPane}
+        >
+          <PanelRight size={18} aria-hidden="true" />
+        </CollapsedPaneRail>
+      );
+    }
 
-  const aiPane = rightPaneVisible ? <AiSidebar /> : null;
+    return (
+      <>
+        <AiSidebar edge={edge} />
+        <ResizeSeparator
+          ariaLabel="Resize AI assistant"
+          className="workspace-resizer"
+          max={OUTER_LAYOUT_LIMITS.right.max}
+          min={OUTER_LAYOUT_LIMITS.right.min}
+          value={rightWidth}
+          onResize={handleRightWidthChange}
+          reverse={edge === "right"}
+        />
+      </>
+    );
+  }
 
-  const aiResizer = rightPaneVisible ? (
-    <ResizeSeparator
-      ariaLabel="Resize AI assistant"
-      className="workspace-resizer workspace-resizer-right"
-      max={OUTER_LAYOUT_LIMITS.right.max}
-      min={OUTER_LAYOUT_LIMITS.right.min}
-      value={rightWidth}
-      onResize={handleRightWidthChange}
-      reverse
-    />
-  ) : (
-    <Button
-      type="button"
-      variant="ghost"
-      className="pane-toggle pane-toggle-right"
-      aria-label="Show AI assistant"
-      onClick={toggleRightPane}
-    >
-      <PanelRightOpen size={18} aria-hidden="true" />
-    </Button>
-  );
-
-  const firstPane = aiPaneOnLeft ? aiPane : vaultPane;
-  const firstResizer = aiPaneOnLeft ? aiResizer : vaultResizer;
-  const secondPane = aiPaneOnLeft ? vaultPane : aiPane;
-  const secondResizer = aiPaneOnLeft ? vaultResizer : aiResizer;
+  const firstItem = aiPaneOnLeft
+    ? renderAiItem("left")
+    : renderVaultItem("left");
+  const secondItem = aiPaneOnLeft
+    ? renderVaultItem("right")
+    : renderAiItem("right");
 
   return (
     <div className="app-shell" data-testid="app-shell" style={shellStyle}>
-      {firstPane}
-      {firstResizer}
+      {firstItem}
 
       <main className="workspace" aria-label="Note workspace">
         <div className="workspace-toolbar-top">
@@ -372,8 +393,7 @@ export function AppLayout() {
         </section>
       </main>
 
-      {secondResizer}
-      {secondPane}
+      {secondItem}
 
       <footer className="status-bar" aria-label="Application status">
         <span>
@@ -388,6 +408,37 @@ export function AppLayout() {
 
       <SettingsPage />
     </div>
+  );
+}
+
+function CollapsedPaneRail({
+  ariaLabel,
+  children,
+  edge,
+  onShow,
+  showLabel,
+}: {
+  ariaLabel: string;
+  children: ReactNode;
+  edge: "left" | "right";
+  onShow: () => void;
+  showLabel: string;
+}) {
+  return (
+    <aside
+      aria-label={ariaLabel}
+      className="collapsed-pane-rail"
+      data-edge={edge}
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        aria-label={showLabel}
+        onClick={onShow}
+      >
+        {children}
+      </Button>
+    </aside>
   );
 }
 

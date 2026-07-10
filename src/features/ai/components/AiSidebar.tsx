@@ -4,10 +4,11 @@ import { AiActionBar } from "./AiActionBar";
 import { AiResultPreview } from "./AiResultPreview";
 import { ApplyChangeDialog } from "./ApplyChangeDialog";
 
-export function AiSidebar() {
+export function AiSidebar({ edge = "right" }: { edge?: "left" | "right" }) {
   return (
     <aside
       className="ai-sidebar"
+      data-edge={edge}
       role="complementary"
       aria-label="AI assistant"
     >

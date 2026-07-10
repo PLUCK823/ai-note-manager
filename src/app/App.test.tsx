@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -440,6 +440,67 @@ describe("App", () => {
 
     expect(hideLeftButtons.length).toBeGreaterThan(0);
     expect(hideRightButtons.length).toBeGreaterThan(0);
+  });
+
+  it("renders a restore rail when file navigation is collapsed", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: false,
+      rightPaneVisible: true,
+      aiPaneOnLeft: false,
+    });
+
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    const rail = await screen.findByLabelText("Collapsed file navigation");
+    expect(rail).toHaveAttribute("data-edge", "left");
+    expect(
+      within(rail).getByRole("button", { name: "Show file navigation" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Vault navigation")).not.toBeInTheDocument();
+  });
+
+  it("restores a collapsed AI pane from its rail after moving it left", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: false,
+      aiPaneOnLeft: true,
+    });
+
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    const rail = await screen.findByLabelText("Collapsed AI assistant");
+    expect(rail).toHaveAttribute("data-edge", "left");
+
+    fireEvent.click(
+      within(rail).getByRole("button", { name: "Show AI assistant" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText("Collapsed AI assistant")).not.toBeInTheDocument();
   });
 
   it("debounces pane width updates to settings", async () => {
