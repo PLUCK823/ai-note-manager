@@ -100,6 +100,18 @@ try {
     // Return to Split for the remaining tests
     await clickButton(browser, "Split");
 
+    await clickButton(browser, "Hide file navigation");
+    await assertElementPresent(browser, '[aria-label="Collapsed file navigation"]');
+    await clickButton(browser, "Show file navigation");
+    await assertElementPresent(browser, '[aria-label="Vault navigation"]');
+
+    await clickButton(browser, "Move AI assistant to left");
+    await clickButton(browser, "Hide AI assistant");
+    await assertElementPresent(browser, '[aria-label="Collapsed AI assistant"]');
+    await clickButton(browser, "Show AI assistant");
+    await assertElementPresent(browser, '[aria-label="AI assistant"]');
+    await assertElementPresent(browser, '[aria-label="Markdown editor"]');
+
     await clickButton(browser, "Desktop Smoke.md");
     await browser.waitUntil(
       async () => /Loaded through the real Tauri shell\./i.test(await bodyInnerText(browser)),
