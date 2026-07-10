@@ -286,7 +286,7 @@ This document records the current implementation state of AI Note Manager after 
     Evidence: The `blockquote` block type now includes a `children: MarkdownBlock[]` field. `parseBlockquote` strips one level of `>` prefix from each line, detects inner lines that still start with `>` as nested blockquotes, re-parses the stripped body through `parseMarkdownBlocks`, collects nested blockquote blocks as children, and keeps remaining paragraph text in the parent quote. `MarkdownPreview` renders nested blockquotes recursively inside their parent `<blockquote>` element. Frontend tests cover a two-level nested blockquote with inline text.
 
 94. Workspace navigation uses a VS Code-style collapsible tree and restorable pane rails.
-    Evidence: `FileTree` now renders folders as accessible disclosure buttons with independent expansion state, compact nested indentation, and active-note highlighting; top-level folders and active-note ancestors are expanded by default. `AppLayout` now keeps a collapsed vault or AI pane as a visible narrow rail with an icon-only restore action. Vault and AI preserve their own persisted widths after swapping physical sides, and each resize separator remains adjacent to the workspace with the correct drag direction. Frontend tests cover folder toggling, active-note state, rail rendering, rail restoration, and swapped AI placement. `shell-smoke.mjs` covers vault collapse/restore, AI swap/collapse/restore, and continued editor operation. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-10-vscode-file-tree-and-collapsible-panes-design.md` and `docs/superpowers/plans/2026-07-10-vscode-file-tree-and-collapsible-panes.md`.
+    Evidence: `FileTree` now renders folders as accessible disclosure buttons with independent, vault-scoped expansion state, compact nested indentation, and active-note highlighting; top-level folders and active-note ancestors are expanded by default. `AppLayout` now keeps a collapsed vault or AI pane as a visible narrow rail with an icon-only restore action. Vault and AI preserve their own persisted widths after swapping physical sides, and each resize separator remains adjacent to the workspace with the correct drag direction. Frontend tests cover folder toggling, active-note state, vault switching, rail rendering, rail restoration, and swapped AI placement. `shell-smoke.mjs` covers vault collapse/restore, AI swap/collapse/restore, and continued editor operation. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-10-vscode-file-tree-and-collapsible-panes-design.md` and `docs/superpowers/plans/2026-07-10-vscode-file-tree-and-collapsible-panes.md`.
 
 ## Verification
 
@@ -296,7 +296,7 @@ The latest full verification for the collapsible tree and workspace rail complet
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 100 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 101 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 

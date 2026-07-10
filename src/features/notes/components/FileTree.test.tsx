@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -158,5 +158,34 @@ describe("FileTree", () => {
       "aria-current",
       "page",
     );
+  });
+
+  it("uses default folder expansion after switching vaults", async () => {
+    useVaultStore.getState().setCurrentVault(testVault);
+    listMarkdownFilesMock.mockResolvedValue([
+      folderNode("projects", [fileNode("Plan.md", "projects/Plan.md")]),
+    ]);
+
+    render(<FileTree />, { wrapper: TestProvider });
+
+    const projects = await screen.findByRole("button", { name: "projects" });
+    fireEvent.click(projects);
+    expect(projects).toHaveAttribute("aria-expanded", "false");
+
+    act(() => {
+      useVaultStore.getState().setCurrentVault({
+        ...testVault,
+        id: "vault:/Users/test/second-notes",
+        name: "second-notes",
+        path: "/Users/test/second-notes",
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "projects" })).toHaveAttribute(
+        "aria-expanded",
+        "true",
+      );
+    });
   });
 });

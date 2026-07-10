@@ -9,6 +9,7 @@ import { useNotesStore } from "../hooks";
 import type { FileTreeNode } from "../types";
 
 const EMPTY_NODES: FileTreeNode[] = [];
+const EMPTY_FOLDER_EXPANSION = new Map<string, boolean>();
 
 export function FileTree() {
   const currentVault = useVaultStore((state) => state.currentVault);
@@ -19,9 +20,14 @@ export function FileTree() {
   });
   const nodes = fileTreeQuery.data ?? EMPTY_NODES;
   const activePath = useNotesStore((state) => state.activePath);
-  const [folderExpansion, setFolderExpansion] = useState<Map<string, boolean>>(
-    () => new Map(),
-  );
+  const [folderExpansion, setFolderExpansion] = useState(() => ({
+    vaultId: null as string | null,
+    values: new Map<string, boolean>(),
+  }));
+  const visibleFolderExpansion =
+    folderExpansion.vaultId === currentVault?.id
+      ? folderExpansion.values
+      : EMPTY_FOLDER_EXPANSION;
 
   if (!currentVault) {
     return (
@@ -49,9 +55,12 @@ export function FileTree() {
 
   function toggleFolder(path: string, expanded: boolean) {
     setFolderExpansion((current) => {
-      const next = new Map(current);
+      const next =
+        current.vaultId === currentVault?.id
+          ? new Map(current.values)
+          : new Map<string, boolean>();
       next.set(path, expanded);
-      return next;
+      return { vaultId: currentVault?.id ?? null, values: next };
     });
   }
 
@@ -62,7 +71,7 @@ export function FileTree() {
           <TreeNode
             activePath={activePath}
             depth={0}
-            folderExpansion={folderExpansion}
+            folderExpansion={visibleFolderExpansion}
             key={node.path}
             node={node}
             onToggleFolder={toggleFolder}
