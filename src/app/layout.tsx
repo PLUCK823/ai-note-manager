@@ -1,7 +1,6 @@
 import {
   type CSSProperties,
   type PointerEvent,
-  type ReactNode,
   useEffect,
   useRef,
   useState,
@@ -223,11 +222,9 @@ export function AppLayout() {
         <CollapsedPaneRail
           ariaLabel="Collapsed file navigation"
           edge={edge}
-          showLabel="Show file navigation"
+          showLabel={`Expand ${edge} sidebar`}
           onShow={toggleLeftPane}
-        >
-          <FileText size={18} aria-hidden="true" />
-        </CollapsedPaneRail>
+        />
       );
     }
 
@@ -238,9 +235,23 @@ export function AppLayout() {
             <p className="eyebrow">Local Markdown</p>
             <h1>AI Note Manager</h1>
           </div>
-          <Button type="button" variant="ghost" aria-label="Settings">
-            <Settings size={18} aria-hidden="true" />
-          </Button>
+          <div className="brand-actions">
+            <Button type="button" variant="ghost" aria-label="Settings">
+              <Settings size={18} aria-hidden="true" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              aria-label={`Collapse ${edge} sidebar`}
+              onClick={toggleLeftPane}
+            >
+              {edge === "left" ? (
+                <PanelLeftClose size={18} aria-hidden="true" />
+              ) : (
+                <PanelRightClose size={18} aria-hidden="true" />
+              )}
+            </Button>
+          </div>
         </div>
         <VaultPicker />
         <VaultStatus />
@@ -274,15 +285,13 @@ export function AppLayout() {
         <CollapsedPaneRail
           ariaLabel="Collapsed AI assistant"
           edge={edge}
-          showLabel="Show AI assistant"
+          showLabel={`Expand ${edge} sidebar`}
           onShow={toggleRightPane}
-        >
-          <PanelRight size={18} aria-hidden="true" />
-        </CollapsedPaneRail>
+        />
       );
     }
 
-    const pane = <AiSidebar edge={edge} />;
+    const pane = <AiSidebar edge={edge} onCollapse={toggleRightPane} />;
     const resizer = (
       <ResizeSeparator
         ariaLabel="Resize AI assistant"
@@ -315,30 +324,6 @@ export function AppLayout() {
 
       <main className="workspace" aria-label="Note workspace">
         <div className="workspace-toolbar-top">
-          <Button
-            type="button"
-            variant="ghost"
-            aria-label={leftPaneVisible ? "Hide file navigation" : "Show file navigation"}
-            onClick={toggleLeftPane}
-          >
-            {leftPaneVisible ? (
-              <PanelLeftClose size={16} aria-hidden="true" />
-            ) : (
-              <PanelLeftOpen size={16} aria-hidden="true" />
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            aria-label={rightPaneVisible ? "Hide AI assistant" : "Show AI assistant"}
-            onClick={toggleRightPane}
-          >
-            {rightPaneVisible ? (
-              <PanelRightClose size={16} aria-hidden="true" />
-            ) : (
-              <PanelRightOpen size={16} aria-hidden="true" />
-            )}
-          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -423,13 +408,11 @@ export function AppLayout() {
 
 function CollapsedPaneRail({
   ariaLabel,
-  children,
   edge,
   onShow,
   showLabel,
 }: {
   ariaLabel: string;
-  children: ReactNode;
   edge: "left" | "right";
   onShow: () => void;
   showLabel: string;
@@ -446,7 +429,11 @@ function CollapsedPaneRail({
         aria-label={showLabel}
         onClick={onShow}
       >
-        {children}
+        {edge === "left" ? (
+          <PanelLeftOpen size={18} aria-hidden="true" />
+        ) : (
+          <PanelRightOpen size={18} aria-hidden="true" />
+        )}
       </Button>
     </aside>
   );

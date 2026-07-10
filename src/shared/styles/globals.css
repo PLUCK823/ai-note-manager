@@ -105,6 +105,11 @@ button {
   justify-content: space-between;
 }
 
+.brand-actions {
+  display: flex;
+  gap: 4px;
+}
+
 .brand-bar h1,
 .note-header h2,
 .panel-header h2,
@@ -338,6 +343,10 @@ button {
 .workspace-toolbar-top .button {
   min-height: 28px;
   padding: 0 6px;
+}
+
+.panel-header {
+  justify-content: space-between;
 }
 
 .collapsed-pane-rail {

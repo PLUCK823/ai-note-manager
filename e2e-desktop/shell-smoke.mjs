@@ -100,15 +100,16 @@ try {
     // Return to Split for the remaining tests
     await clickButton(browser, "Split");
 
-    await clickButton(browser, "Hide file navigation");
+    await clickButton(browser, "Collapse left sidebar");
     await assertElementPresent(browser, '[aria-label="Collapsed file navigation"]');
-    await clickButton(browser, "Show file navigation");
+    await clickButton(browser, "Expand left sidebar");
     await assertElementPresent(browser, '[aria-label="Vault navigation"]');
 
     await clickButton(browser, "Move AI assistant to left");
-    await clickButton(browser, "Hide AI assistant");
+    await assertElementPresent(browser, '[aria-label="AI assistant"][data-edge="left"]');
+    await clickButton(browser, "Collapse left sidebar");
     await assertElementPresent(browser, '[aria-label="Collapsed AI assistant"]');
-    await clickButton(browser, "Show AI assistant");
+    await clickButton(browser, "Expand left sidebar");
     await assertElementPresent(browser, '[aria-label="AI assistant"]');
     await assertElementPresent(browser, '[aria-label="Markdown editor"]');
 

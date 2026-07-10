@@ -1,8 +1,8 @@
 # Project Status
 
-Date: 2026-07-10
+Date: 2026-07-11
 
-This document records the current implementation state of AI Note Manager after the first 94 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 95 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -288,15 +288,18 @@ This document records the current implementation state of AI Note Manager after 
 94. Workspace navigation uses a VS Code-style collapsible tree and restorable pane rails.
     Evidence: `FileTree` now renders folders as accessible disclosure buttons with independent, vault-scoped expansion state, compact nested indentation, and active-note highlighting; top-level folders and active-note ancestors are expanded by default. `AppLayout` now keeps a collapsed vault or AI pane as a visible narrow rail with an icon-only restore action. Vault and AI preserve their own persisted widths after swapping physical sides, and each resize separator remains adjacent to the workspace with the correct drag direction. Frontend tests cover folder toggling, active-note state, vault switching, rail rendering, rail restoration, and swapped AI placement. `shell-smoke.mjs` covers vault collapse/restore, AI swap/collapse/restore, and continued editor operation. Design and implementation planning are documented in `docs/superpowers/specs/2026-07-10-vscode-file-tree-and-collapsible-panes-design.md` and `docs/superpowers/plans/2026-07-10-vscode-file-tree-and-collapsible-panes.md`.
 
+95. Sidebar controls follow their physical workspace edge after pane swapping.
+    Evidence: Expanded vault and AI sidebars now own their collapse button, labeled by the current physical edge (`Collapse left sidebar` or `Collapse right sidebar`); the central workspace toolbar retains only the pane-swap command. Collapsed sides render a fixed 44px rail with the matching physical-edge restore action, and no separator remains beside a rail. Frontend, browser smoke, and desktop-shell smoke tests cover collapsing the default left vault, swapping AI to the left, collapsing only that left AI sidebar, restoring it, and preserving the opposite sidebar.
+
 ## Verification
 
-The latest full verification for the collapsible tree and workspace rail completion point used:
+The latest full verification for the physical sidebar control completion point used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 101 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 103 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -308,8 +311,8 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
 2. Desktop-shell workflow coverage is still narrow.
     The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, AI preview/apply behavior, editor view mode switching, pane collapse/restore, and pane position swapping, but it does not yet drive native OS file picker dialogs.
 
-3. Workspace layout customization is in its fourth phase.
-   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can be resized; pane sizes persist across restarts; primary panes scroll independently; the vault tree supports folder-level expansion; collapsed vault and AI panes remain recoverable from a narrow rail; AI and vault panes can swap positions; and Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, persisted per-folder expansion preferences, and block-level editor/preview source mapping are not implemented yet.
+3. Workspace layout customization is in its fifth phase.
+   The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can be resized; pane sizes persist across restarts; primary panes scroll independently; the vault tree supports folder-level expansion; collapsed vault and AI panes remain recoverable from a narrow rail; AI and vault panes can swap positions; and every sidebar collapse or restore control follows the physical left or right edge after swapping. Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, persisted per-folder expansion preferences, and block-level editor/preview source mapping are not implemented yet.
 
 ## Next Priorities
 

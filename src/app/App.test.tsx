@@ -422,7 +422,7 @@ describe("App", () => {
     });
   });
 
-  it("toggles pane visibility buttons are present", async () => {
+  it("renders collapse controls inside the physical sidebars", async () => {
     render(
       <TestProviders>
         <App />
@@ -431,15 +431,22 @@ describe("App", () => {
 
     await screen.findByTestId("app-shell");
 
-    // Left pane should be visible initially
-    expect(screen.getByLabelText("Vault navigation")).toBeInTheDocument();
+    const vault = screen.getByLabelText("Vault navigation");
+    const ai = screen.getByLabelText("AI assistant");
 
-    // Toggle buttons should be present in the toolbar
-    const hideLeftButtons = screen.getAllByLabelText("Hide file navigation");
-    const hideRightButtons = screen.getAllByLabelText("Hide AI assistant");
-
-    expect(hideLeftButtons.length).toBeGreaterThan(0);
-    expect(hideRightButtons.length).toBeGreaterThan(0);
+    expect(
+      within(vault).getByRole("button", { name: "Collapse left sidebar" }),
+    ).toBeInTheDocument();
+    expect(
+      within(ai).getByRole("button", { name: "Collapse right sidebar" }),
+    ).toBeInTheDocument();
+    const workspace = screen.getByLabelText("Note workspace");
+    expect(
+      within(workspace).queryByRole("button", { name: "Collapse left sidebar" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(workspace).queryByRole("button", { name: "Collapse right sidebar" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a restore rail when file navigation is collapsed", async () => {
@@ -465,7 +472,7 @@ describe("App", () => {
     const rail = await screen.findByLabelText("Collapsed file navigation");
     expect(rail).toHaveAttribute("data-edge", "left");
     expect(
-      within(rail).getByRole("button", { name: "Show file navigation" }),
+      within(rail).getByRole("button", { name: "Expand left sidebar" }),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Vault navigation")).not.toBeInTheDocument();
   });
@@ -494,13 +501,82 @@ describe("App", () => {
     expect(rail).toHaveAttribute("data-edge", "left");
 
     fireEvent.click(
-      within(rail).getByRole("button", { name: "Show AI assistant" }),
+      within(rail).getByRole("button", { name: "Expand left sidebar" }),
     );
 
     await waitFor(() => {
       expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
     });
     expect(screen.queryByLabelText("Collapsed AI assistant")).not.toBeInTheDocument();
+  });
+
+  it("collapses the vault from the physical left sidebar in the default layout", async () => {
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    const vault = await screen.findByLabelText("Vault navigation");
+    await screen.findByLabelText("Sync editor and preview scrolling");
+    fireEvent.click(
+      within(vault).getByRole("button", { name: "Collapse left sidebar" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Collapsed file navigation")).toHaveAttribute(
+        "data-edge",
+        "left",
+      );
+    });
+    expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Collapse left sidebar" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("collapses only AI from the physical left sidebar after swapping panes", async () => {
+    getSettingsMock.mockResolvedValue({
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: true,
+      aiPaneOnLeft: true,
+    });
+
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("AI assistant")).toHaveAttribute(
+        "data-edge",
+        "left",
+      );
+    });
+    const ai = screen.getByLabelText("AI assistant");
+    fireEvent.click(
+      within(ai).getByRole("button", { name: "Collapse left sidebar" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Collapsed AI assistant")).toHaveAttribute(
+        "data-edge",
+        "left",
+      );
+    });
+    expect(screen.getByLabelText("Vault navigation")).toHaveAttribute(
+      "data-edge",
+      "right",
+    );
+    expect(screen.queryByLabelText("AI assistant")).not.toBeInTheDocument();
   });
 
   it("debounces pane width updates to settings", async () => {

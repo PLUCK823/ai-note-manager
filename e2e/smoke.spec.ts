@@ -12,6 +12,18 @@ test("covers the core note workflow with mocked Tauri commands", async ({
     };
     let content = "# Launch Plan\n\nShip the MVP safely.";
     let contentHash = "hash-initial";
+    let settings = {
+      model: "gpt-4.1-mini",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+      leftPaneWidth: 288,
+      rightPaneWidth: 336,
+      previewPaneWidth: 360,
+      leftPaneVisible: true,
+      rightPaneVisible: true,
+      aiPaneOnLeft: false,
+    };
     const callbacks = new Map<number, (event: unknown) => void>();
     const eventListeners = new Map<string, number[]>();
     let nextListenerId = 1;
@@ -20,6 +32,13 @@ test("covers the core note workflow with mocked Tauri commands", async ({
       invoke(command: string, args?: Record<string, unknown>) {
         if (command === "get_recent_vault") {
           return Promise.resolve(null);
+        }
+        if (command === "get_settings") {
+          return Promise.resolve(settings);
+        }
+        if (command === "update_settings") {
+          settings = args?.input as typeof settings;
+          return Promise.resolve(settings);
         }
         if (command === "select_vault") {
           return Promise.resolve(vault);
@@ -144,6 +163,33 @@ test("covers the core note workflow with mocked Tauri commands", async ({
 
   await page.getByLabel("Search notes").fill("MVP");
   await expect(page.getByLabel("Search results")).toContainText("Launch Plan");
+
+  await page.getByRole("button", { name: "Move AI assistant to left" }).click();
+  const aiSidebar = page.locator('aside[aria-label="AI assistant"]');
+  const vaultSidebar = page.locator('aside[aria-label="Vault navigation"]');
+  await expect(aiSidebar).toHaveAttribute(
+    "data-edge",
+    "left",
+  );
+  await aiSidebar
+    .getByRole("button", { name: "Collapse left sidebar" })
+    .click();
+  const collapsedAiRail = page.locator('aside[aria-label="Collapsed AI assistant"]');
+  await expect(collapsedAiRail).toHaveAttribute(
+    "data-edge",
+    "left",
+  );
+  await expect(vaultSidebar).toHaveAttribute(
+    "data-edge",
+    "right",
+  );
+  await collapsedAiRail
+    .getByRole("button", { name: "Expand left sidebar" })
+    .click();
+  await expect(aiSidebar).toHaveAttribute(
+    "data-edge",
+    "left",
+  );
 
   await page.getByRole("button", { name: "Rewrite" }).click();
   const applyDialog = page.getByRole("dialog", { name: "Apply AI change" });

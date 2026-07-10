@@ -1,10 +1,17 @@
-import { Bot, ShieldCheck } from "lucide-react";
+import { Bot, PanelLeftClose, PanelRightClose, ShieldCheck } from "lucide-react";
 
 import { AiActionBar } from "./AiActionBar";
 import { AiResultPreview } from "./AiResultPreview";
 import { ApplyChangeDialog } from "./ApplyChangeDialog";
+import { Button } from "../../../shared/components/Button";
 
-export function AiSidebar({ edge = "right" }: { edge?: "left" | "right" }) {
+export function AiSidebar({
+  edge = "right",
+  onCollapse,
+}: {
+  edge?: "left" | "right";
+  onCollapse?: () => void;
+}) {
   return (
     <aside
       className="ai-sidebar"
@@ -20,6 +27,20 @@ export function AiSidebar({ edge = "right" }: { edge?: "left" | "right" }) {
             AI assistant
           </h2>
         </div>
+        {onCollapse ? (
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label={`Collapse ${edge} sidebar`}
+            onClick={onCollapse}
+          >
+            {edge === "left" ? (
+              <PanelLeftClose size={18} aria-hidden="true" />
+            ) : (
+              <PanelRightClose size={18} aria-hidden="true" />
+            )}
+          </Button>
+        ) : null}
       </header>
       <AiActionBar />
       <AiResultPreview />
