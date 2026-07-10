@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useEditorStore } from "../../editor/editorState";
 import { useVaultStore } from "../../vault/hooks";
@@ -19,13 +19,9 @@ export function FileTree() {
   });
   const nodes = fileTreeQuery.data ?? EMPTY_NODES;
   const activePath = useNotesStore((state) => state.activePath);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-    () => new Set(),
+  const [folderExpansion, setFolderExpansion] = useState<Map<string, boolean>>(
+    () => new Map(),
   );
-
-  useEffect(() => {
-    setExpandedFolders(initialExpandedFolders(nodes, activePath));
-  }, [activePath, nodes]);
 
   if (!currentVault) {
     return (
@@ -51,14 +47,10 @@ export function FileTree() {
     );
   }
 
-  function toggleFolder(path: string) {
-    setExpandedFolders((current) => {
-      const next = new Set(current);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
+  function toggleFolder(path: string, expanded: boolean) {
+    setFolderExpansion((current) => {
+      const next = new Map(current);
+      next.set(path, expanded);
       return next;
     });
   }
@@ -70,7 +62,7 @@ export function FileTree() {
           <TreeNode
             activePath={activePath}
             depth={0}
-            expandedFolders={expandedFolders}
+            folderExpansion={folderExpansion}
             key={node.path}
             node={node}
             onToggleFolder={toggleFolder}
@@ -83,46 +75,28 @@ export function FileTree() {
   );
 }
 
-function initialExpandedFolders(
-  nodes: FileTreeNode[],
-  activePath: string | null,
-) {
-  const expanded = new Set(
-    nodes
-      .filter((node) => node.kind === "folder")
-      .map((node) => node.path),
-  );
-
-  function collectActiveAncestors(node: FileTreeNode) {
-    if (node.kind === "folder" && activePath?.startsWith(`${node.path}/`)) {
-      expanded.add(node.path);
-    }
-    node.children?.forEach(collectActiveAncestors);
-  }
-
-  nodes.forEach(collectActiveAncestors);
-  return expanded;
-}
-
 function TreeNode({
   activePath,
   depth,
-  expandedFolders,
+  folderExpansion,
   node,
   onToggleFolder,
 }: {
   activePath: string | null;
   depth: number;
-  expandedFolders: Set<string>;
+  folderExpansion: Map<string, boolean>;
   node: FileTreeNode;
-  onToggleFolder: (path: string) => void;
+  onToggleFolder: (path: string, expanded: boolean) => void;
 }) {
   const currentVault = useVaultStore((state) => state.currentVault);
   const setActivePath = useNotesStore((state) => state.setActivePath);
   const loadContent = useEditorStore((state) => state.loadContent);
   const setSaveState = useEditorStore((state) => state.setSaveState);
   const isFolder = node.kind === "folder";
-  const isExpanded = isFolder && expandedFolders.has(node.path);
+  const defaultExpanded =
+    depth === 0 || Boolean(activePath?.startsWith(`${node.path}/`));
+  const isExpanded =
+    isFolder && (folderExpansion.get(node.path) ?? defaultExpanded);
   const indent = { paddingLeft: `${8 + depth * 16}px` };
 
   async function handleClick() {
@@ -148,7 +122,7 @@ function TreeNode({
           className="tree-item tree-folder"
           style={indent}
           type="button"
-          onClick={() => onToggleFolder(node.path)}
+          onClick={() => onToggleFolder(node.path, !isExpanded)}
         >
           {isExpanded ? (
             <ChevronDown size={15} aria-hidden="true" />
@@ -176,7 +150,7 @@ function TreeNode({
             <TreeNode
               activePath={activePath}
               depth={depth + 1}
-              expandedFolders={expandedFolders}
+              folderExpansion={folderExpansion}
               key={child.path}
               node={child}
               onToggleFolder={onToggleFolder}

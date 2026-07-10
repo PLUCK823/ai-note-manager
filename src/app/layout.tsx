@@ -231,34 +231,40 @@ export function AppLayout() {
       );
     }
 
-    return (
-      <>
-        <aside className="vault-pane" aria-label="Vault navigation" data-edge={edge}>
-      <div className="brand-bar">
-        <div>
-          <p className="eyebrow">Local Markdown</p>
-          <h1>AI Note Manager</h1>
+    const pane = (
+      <aside className="vault-pane" aria-label="Vault navigation" data-edge={edge}>
+        <div className="brand-bar">
+          <div>
+            <p className="eyebrow">Local Markdown</p>
+            <h1>AI Note Manager</h1>
+          </div>
+          <Button type="button" variant="ghost" aria-label="Settings">
+            <Settings size={18} aria-hidden="true" />
+          </Button>
         </div>
-        <Button type="button" variant="ghost" aria-label="Settings">
-          <Settings size={18} aria-hidden="true" />
-        </Button>
-      </div>
-      <VaultPicker />
-      <VaultStatus />
-      <SearchBox />
-      <SearchResults />
-      <FileTree />
-        </aside>
-        <ResizeSeparator
-          ariaLabel="Resize file navigation"
-          className="workspace-resizer"
-          max={OUTER_LAYOUT_LIMITS.left.max}
-          min={OUTER_LAYOUT_LIMITS.left.min}
-          value={leftWidth}
-          onResize={handleLeftWidthChange}
-          reverse={edge === "right"}
-        />
-      </>
+        <VaultPicker />
+        <VaultStatus />
+        <SearchBox />
+        <SearchResults />
+        <FileTree />
+      </aside>
+    );
+    const resizer = (
+      <ResizeSeparator
+        ariaLabel="Resize file navigation"
+        className="workspace-resizer"
+        max={OUTER_LAYOUT_LIMITS.left.max}
+        min={OUTER_LAYOUT_LIMITS.left.min}
+        value={leftWidth}
+        onResize={handleLeftWidthChange}
+        reverse={edge === "right"}
+      />
+    );
+
+    return edge === "left" ? (
+      <>{pane}{resizer}</>
+    ) : (
+      <>{resizer}{pane}</>
     );
   }
 
@@ -276,19 +282,23 @@ export function AppLayout() {
       );
     }
 
-    return (
-      <>
-        <AiSidebar edge={edge} />
-        <ResizeSeparator
-          ariaLabel="Resize AI assistant"
-          className="workspace-resizer"
-          max={OUTER_LAYOUT_LIMITS.right.max}
-          min={OUTER_LAYOUT_LIMITS.right.min}
-          value={rightWidth}
-          onResize={handleRightWidthChange}
-          reverse={edge === "right"}
-        />
-      </>
+    const pane = <AiSidebar edge={edge} />;
+    const resizer = (
+      <ResizeSeparator
+        ariaLabel="Resize AI assistant"
+        className="workspace-resizer"
+        max={OUTER_LAYOUT_LIMITS.right.max}
+        min={OUTER_LAYOUT_LIMITS.right.min}
+        value={rightWidth}
+        onResize={handleRightWidthChange}
+        reverse={edge === "right"}
+      />
+    );
+
+    return edge === "left" ? (
+      <>{pane}{resizer}</>
+    ) : (
+      <>{resizer}{pane}</>
     );
   }
 
