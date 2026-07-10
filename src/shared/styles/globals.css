@@ -258,7 +258,7 @@ button {
 .file-tree {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .empty-tree {
@@ -270,7 +270,13 @@ button {
 .tree-node {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+}
+
+.tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .tree-item,
@@ -279,11 +285,32 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 34px;
-  border: 1px solid rgba(23, 32, 27, 0.12);
-  border-radius: 7px;
-  padding: 0 10px;
+  min-height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding-right: 8px;
   text-align: left;
+}
+
+.tree-item:hover {
+  border-color: rgba(31, 95, 74, 0.2);
+  background: rgba(31, 95, 74, 0.1);
+}
+
+.tree-folder {
+  color: #344239;
+  font-weight: 650;
+}
+
+.tree-file {
+  color: #46524b;
+}
+
+.tree-file.is-active {
+  border-color: rgba(31, 95, 74, 0.3);
+  color: #173f31;
+  background: rgba(31, 95, 74, 0.16);
+  font-weight: 700;
 }
 
 .workspace {
