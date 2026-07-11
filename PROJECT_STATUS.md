@@ -2,7 +2,7 @@
 
 Date: 2026-07-11
 
-This document records the current implementation state of AI Note Manager after the first 100 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 101 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -306,6 +306,9 @@ This document records the current implementation state of AI Note Manager after 
 100. AI workspace tasks produce reviewable, vault-scoped file-operation plans.
      Evidence: `WorkspaceAssistant` accepts a natural-language task plus active-file and selected-text context. `plan_workspace_changes` sends only the selected Vault Markdown manifest and explicit editor context to the configured provider, requiring a typed JSON plan of read, search, create, update, and delete operations. `apply_workspace_plan` runs only user-selected operations through existing `NoteService` and SQLite search boundaries, retaining relative-path checks, Markdown constraints, save conflict protection, and trash deletion. The sidebar displays operation reason, path, replacement preview, independent selection, and execution results. Frontend tests verify no operation is applied before confirmation and that only selected operations are submitted.
 
+101. Provider connection checks validate the currently entered API key before saving.
+     Evidence: DeepSeek diagnosis confirmed that the existing `deepseek` keyring entry was rejected by the provider with HTTP 401, while the selected endpoint and model request were accepted as syntactically valid. `Check AI connection` now sends the non-empty key currently in the settings form directly to the provider check command before falling back to the stored key. Settings saves now write the keyring entry first and report a visible error if macOS Keychain access fails, instead of silently failing after settings persistence. Frontend tests cover unsaved-key connection checks; the full desktop, browser, frontend, and Rust verification suite remains green.
+
 ## Verification
 
 The latest full verification for the confirmed AI workspace agent used:
@@ -314,7 +317,7 @@ The latest full verification for the confirmed AI workspace agent used:
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count: 12 frontend test files / 110 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, and 43 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count: 12 frontend test files / 111 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, and 43 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 

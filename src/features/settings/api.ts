@@ -16,6 +16,6 @@ export function saveApiKey(provider: string, apiKey: string) {
   });
 }
 
-export function checkAiProvider(input: AppSettings) {
-  return callCommand<boolean>("check_ai_provider", { input });
+export function checkAiProvider(input: AppSettings, apiKey?: string) {
+  return callCommand<boolean>("check_ai_provider", { input, apiKey });
 }

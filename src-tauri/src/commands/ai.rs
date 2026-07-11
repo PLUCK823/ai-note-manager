@@ -184,8 +184,16 @@ pub async fn plan_workspace_changes(
 }
 
 #[tauri::command]
-pub async fn check_ai_provider(app: AppHandle, input: AppSettings) -> Result<bool, AppError> {
-    let api_key = SettingsService::get_api_key(&SecretStore, input.provider.key_name())?
+pub async fn check_ai_provider(
+    input: AppSettings,
+    api_key: Option<String>,
+) -> Result<bool, AppError> {
+    let api_key = api_key
+        .filter(|value| !value.trim().is_empty())
+        .or(SettingsService::get_api_key(
+            &SecretStore,
+            input.provider.key_name(),
+        )?)
         .ok_or(AppError::AiApiKeyMissing)?;
     let output = collect_provider_output(
         &input.provider,
@@ -194,7 +202,6 @@ pub async fn check_ai_provider(app: AppHandle, input: AppSettings) -> Result<boo
         "Reply with exactly: OK",
     )
     .await?;
-    let _ = app;
     Ok(!output.trim().is_empty())
 }
 

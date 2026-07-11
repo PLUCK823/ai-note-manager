@@ -118,20 +118,27 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
 
   async function handleSave() {
     setSaveMessage(null);
-    const savedSettings = await updateSettings(settings);
-    if (apiKey.trim()) {
-      await saveApiKey(provider, apiKey.trim());
+    try {
+      if (apiKey.trim()) {
+        await saveApiKey(provider, apiKey.trim());
+      }
+      const savedSettings = await updateSettings(settings);
+      setSettings(savedSettings);
+      queryClient.setQueryData(["settings"], savedSettings);
+      setApiKey("");
+      setSaveMessage("Settings saved");
+    } catch {
+      setSaveMessage(
+        "Settings could not be saved. Check macOS Keychain access and try again.",
+      );
     }
-    setSettings(savedSettings);
-    queryClient.setQueryData(["settings"], savedSettings);
-    setSaveMessage("Settings saved");
   }
 
   async function handleCheckConnection() {
     setConnectionMessage(null);
     setIsCheckingConnection(true);
     try {
-      await checkAiProvider(settings);
+      await checkAiProvider(settings, apiKey.trim() || undefined);
       setConnectionMessage(`${providerLabels[provider]} connection verified.`);
     } catch {
       setConnectionMessage(

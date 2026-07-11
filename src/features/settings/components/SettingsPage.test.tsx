@@ -8,12 +8,15 @@ import { SettingsPage } from "./SettingsPage";
 const getSettingsMock = vi.fn();
 const updateSettingsMock = vi.fn();
 const saveApiKeyMock = vi.fn();
+const checkAiProviderMock = vi.fn();
 
 vi.mock("../api", () => ({
   getSettings: () => getSettingsMock(),
   updateSettings: (input: unknown) => updateSettingsMock(input),
   saveApiKey: (provider: string, apiKey: string) =>
     saveApiKeyMock(provider, apiKey),
+  checkAiProvider: (input: unknown, apiKey?: string) =>
+    checkAiProviderMock(input, apiKey),
 }));
 
 function TestProvider({ children }: PropsWithChildren) {
@@ -31,6 +34,40 @@ describe("SettingsPage", () => {
     getSettingsMock.mockReset();
     updateSettingsMock.mockReset();
     saveApiKeyMock.mockReset();
+    checkAiProviderMock.mockReset();
+  });
+
+  it("checks the unsaved provider key before it is persisted", async () => {
+    getSettingsMock.mockResolvedValue({
+      provider: "deepseek",
+      model: "deepseek-v4-flash",
+      aiReadScope: "current_note",
+      autosave: true,
+      syncPreviewScroll: true,
+    });
+    checkAiProviderMock.mockResolvedValue(true);
+
+    render(<SettingsPage />, { wrapper: TestProvider });
+
+    fireEvent.change(await screen.findByLabelText("API key"), {
+      target: { value: "new-deepseek-key" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Check AI connection" }),
+    );
+
+    await waitFor(() => {
+      expect(checkAiProviderMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: "deepseek",
+          model: "deepseek-v4-flash",
+        }),
+        "new-deepseek-key",
+      );
+    });
+    expect(
+      await screen.findByText("DeepSeek connection verified."),
+    ).toBeInTheDocument();
   });
 
   it("saves the selected provider, model, and provider-specific API key", async () => {
