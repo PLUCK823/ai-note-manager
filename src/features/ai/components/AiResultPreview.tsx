@@ -7,6 +7,7 @@ import { useAiStore } from "../aiState";
 export function AiResultPreview() {
   const output = useAiStore((state) => state.output);
   const status = useAiStore((state) => state.status);
+  const errorMessage = useAiStore((state) => state.errorMessage);
   const cancelGeneration = useAiStore((state) => state.cancelGeneration);
   const setPendingChange = useAiStore((state) => state.setPendingChange);
   const content = useEditorStore((state) => state.content);
@@ -63,7 +64,7 @@ export function AiResultPreview() {
           </button>
         </div>
       ) : null}
-      {status === "failed" ? <p>AI action failed.</p> : null}
+      {status === "failed" ? <p>{formatAiError(errorMessage)}</p> : null}
       {outputBlocks.length > 0 ? (
         <>
           <div className="ai-output-toolbar">
@@ -105,4 +106,16 @@ export function AiResultPreview() {
       ) : null}
     </section>
   );
+}
+
+function formatAiError(message: string | null) {
+  if (message === "ai_api_key_missing") {
+    return "AI API key is missing for the selected provider.";
+  }
+
+  if (message === "ai_action_start_failed") {
+    return "AI action could not start.";
+  }
+
+  return "AI request failed.";
 }

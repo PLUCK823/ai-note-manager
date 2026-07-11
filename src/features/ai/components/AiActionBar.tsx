@@ -23,6 +23,10 @@ type AiTerminalEvent = {
   requestId: string;
 };
 
+type AiErrorEvent = AiTerminalEvent & {
+  message: string;
+};
+
 export function AiActionBar() {
   const noteContent = useEditorStore((state) => state.content);
   const selection = useEditorStore((state) => state.selection);
@@ -44,16 +48,18 @@ export function AiActionBar() {
       listenToEvent<AiTerminalEvent>("ai:done", (event) => {
         completeStream(event.requestId);
       }),
-      listenToEvent<AiTerminalEvent>("ai:error", (event) => {
-        failStream(event.requestId);
+      listenToEvent<AiErrorEvent>("ai:error", (event) => {
+        failStream(event.requestId, event.message);
       }),
-    ]).then((removeListeners) => {
-      if (isMounted) {
-        unlisteners.push(...removeListeners);
-      } else {
-        removeListeners.forEach((removeListener) => removeListener());
-      }
-    }).catch(() => {});
+    ])
+      .then((removeListeners) => {
+        if (isMounted) {
+          unlisteners.push(...removeListeners);
+        } else {
+          removeListeners.forEach((removeListener) => removeListener());
+        }
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;
@@ -88,7 +94,7 @@ export function AiActionBar() {
       });
       setBackendRequestId(result.requestId, requestId);
     } catch {
-      setFailed(requestId);
+      setFailed(requestId, "ai_action_start_failed");
     }
   }
 

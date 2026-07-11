@@ -54,6 +54,64 @@ pub struct AiStreamError {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WorkspaceOperationKind {
+    Read,
+    Search,
+    Create,
+    Update,
+    Delete,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspacePlanInput {
+    pub vault_id: String,
+    pub instruction: String,
+    pub active_path: Option<String>,
+    pub selected_text: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspacePlan {
+    pub summary: String,
+    pub operations: Vec<WorkspaceOperation>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceOperation {
+    pub kind: WorkspaceOperationKind,
+    pub path: Option<String>,
+    pub content: Option<String>,
+    pub query: Option<String>,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyWorkspacePlanInput {
+    pub vault_id: String,
+    pub operations: Vec<WorkspaceOperation>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApplyWorkspacePlanResult {
+    pub results: Vec<WorkspaceOperationResult>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceOperationResult {
+    pub kind: WorkspaceOperationKind,
+    pub path: Option<String>,
+    pub message: String,
+    pub content: Option<String>,
+}
+
 #[cfg(test)]
 mod streaming_contract_tests {
     use serde_json::json;

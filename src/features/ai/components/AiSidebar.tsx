@@ -1,7 +1,13 @@
-import { Bot, PanelLeftClose, PanelRightClose, ShieldCheck } from "lucide-react";
+import {
+  Bot,
+  PanelLeftClose,
+  PanelRightClose,
+  ShieldCheck,
+} from "lucide-react";
 
 import { AiActionBar } from "./AiActionBar";
 import { AiResultPreview } from "./AiResultPreview";
+import { WorkspaceAssistant } from "./WorkspaceAssistant";
 import { ApplyChangeDialog } from "./ApplyChangeDialog";
 import { Button } from "../../../shared/components/Button";
 
@@ -44,6 +50,7 @@ export function AiSidebar({
       </header>
       <AiActionBar />
       <AiResultPreview />
+      <WorkspaceAssistant />
       <div className="privacy-note">
         <ShieldCheck size={16} aria-hidden="true" />
         Writes require preview and confirmation.

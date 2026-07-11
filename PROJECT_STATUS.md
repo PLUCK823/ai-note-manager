@@ -2,7 +2,7 @@
 
 Date: 2026-07-11
 
-This document records the current implementation state of AI Note Manager after the first 98 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 100 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -300,15 +300,21 @@ This document records the current implementation state of AI Note Manager after 
 98. The vault navigation renders a root-level VS Code-style Explorer toolbar.
     Evidence: `FileTree` now renders the selected `VaultInfo.name` as a disclosure root, so a vault such as `/Users/plucky_hz/Desktop/PRD` visibly starts at `PRD`. Icon-only New File, New Folder, Refresh, and Collapse All controls operate on that active vault root. Root-level creation uses existing Tauri `create_note` and `create_folder` commands with an empty parent path, preserving backend path validation, and invalidates the exact tree query after success. Frontend and Playwright tests cover the root controls, collapse/refresh, and creating a root Markdown file.
 
+99. AI provider failures are visible and cannot leave the UI in a permanent running state.
+    Evidence: `AiState` now accepts a terminal `ai:done` or `ai:error` event that arrives before `run_ai_action` returns its request id, and ignores a late id once the request is terminal. Error payloads are retained and rendered as actionable messages instead of a generic hidden failure. The settings dialog now exposes `Check AI connection`, which uses the selected provider, model, and provider-specific keyring entry. DeepSeek requests explicitly disable thinking mode so note actions receive final content deltas. Frontend regression tests cover the early-error race; Rust request tests cover the DeepSeek setting.
+
+100. AI workspace tasks produce reviewable, vault-scoped file-operation plans.
+     Evidence: `WorkspaceAssistant` accepts a natural-language task plus active-file and selected-text context. `plan_workspace_changes` sends only the selected Vault Markdown manifest and explicit editor context to the configured provider, requiring a typed JSON plan of read, search, create, update, and delete operations. `apply_workspace_plan` runs only user-selected operations through existing `NoteService` and SQLite search boundaries, retaining relative-path checks, Markdown constraints, save conflict protection, and trash deletion. The sidebar displays operation reason, path, replacement preview, independent selection, and execution results. Frontend tests verify no operation is applied before confirmation and that only selected operations are submitted.
+
 ## Verification
 
-The latest full verification for multi-provider configuration and the vault Explorer used:
+The latest full verification for the confirmed AI workspace agent used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count: 11 frontend test files / 108 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, and 43 Rust tests.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count: 12 frontend test files / 110 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, and 43 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 

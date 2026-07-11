@@ -19,6 +19,7 @@ type StreamContext = {
 type AiState = {
   activeRequestId: number;
   backendRequestId: string | null;
+  errorMessage: string | null;
   output: string;
   pendingChange: PendingChange | null;
   streamContext: StreamContext | null;
@@ -26,7 +27,7 @@ type AiState = {
   appendChunk: (requestId: string, chunk: string) => void;
   cancelGeneration: () => string | null;
   completeStream: (requestId: string) => void;
-  failStream: (requestId: string) => void;
+  failStream: (requestId: string, message?: string) => void;
   setPendingChange: (pendingChange: PendingChange) => void;
   setBackendRequestId: (requestId: string, activeRequestId: number) => void;
   setRunning: (streamContext?: StreamContext | null) => number;
@@ -35,13 +36,14 @@ type AiState = {
     pendingChange?: PendingChange | null,
     requestId?: number,
   ) => void;
-  setFailed: (requestId?: number) => void;
+  setFailed: (requestId?: number, message?: string) => void;
   clearPendingChange: () => void;
 };
 
 export const useAiStore = create<AiState>((set, get) => ({
   activeRequestId: 0,
   backendRequestId: null,
+  errorMessage: null,
   output: "",
   pendingChange: null,
   streamContext: null,
@@ -67,6 +69,7 @@ export const useAiStore = create<AiState>((set, get) => ({
       activeRequestId: state.activeRequestId + 1,
       backendRequestId: null,
       output: "",
+      errorMessage: null,
       pendingChange: null,
       status: "idle",
       streamContext: null,
@@ -75,7 +78,10 @@ export const useAiStore = create<AiState>((set, get) => ({
   },
   completeStream: (requestId) =>
     set((state) => {
-      if (state.backendRequestId !== requestId) {
+      const isExpectedRequest = state.backendRequestId === requestId;
+      const isEarlyTerminalEvent =
+        state.status === "running" && state.backendRequestId === null;
+      if (!isExpectedRequest && !isEarlyTerminalEvent) {
         return state;
       }
 
@@ -96,12 +102,14 @@ export const useAiStore = create<AiState>((set, get) => ({
         streamContext: null,
       };
     }),
-  failStream: (requestId) =>
+  failStream: (requestId, message = "ai_request_failed") =>
     set((state) =>
-      state.backendRequestId !== requestId
+      state.backendRequestId !== requestId &&
+      !(state.status === "running" && state.backendRequestId === null)
         ? state
         : {
             backendRequestId: null,
+            errorMessage: message,
             pendingChange: null,
             status: "failed",
             streamContext: null,
@@ -110,7 +118,7 @@ export const useAiStore = create<AiState>((set, get) => ({
   setPendingChange: (pendingChange) => set({ pendingChange }),
   setBackendRequestId: (requestId, activeRequestId) =>
     set((state) =>
-      state.activeRequestId !== activeRequestId
+      state.activeRequestId !== activeRequestId || state.status !== "running"
         ? state
         : { backendRequestId: requestId },
     ),
@@ -119,6 +127,7 @@ export const useAiStore = create<AiState>((set, get) => ({
     set({
       activeRequestId,
       backendRequestId: null,
+      errorMessage: null,
       output: "",
       pendingChange: null,
       streamContext,
@@ -132,17 +141,23 @@ export const useAiStore = create<AiState>((set, get) => ({
         ? state
         : {
             backendRequestId: null,
+            errorMessage: null,
             output,
             pendingChange,
             status: "done",
             streamContext: null,
           },
     ),
-  setFailed: (requestId) =>
+  setFailed: (requestId, message = "ai_request_failed") =>
     set((state) =>
       requestId !== undefined && requestId !== state.activeRequestId
         ? state
-        : { backendRequestId: null, status: "failed", streamContext: null },
+        : {
+            backendRequestId: null,
+            errorMessage: message,
+            status: "failed",
+            streamContext: null,
+          },
     ),
   clearPendingChange: () => set({ pendingChange: null }),
 }));

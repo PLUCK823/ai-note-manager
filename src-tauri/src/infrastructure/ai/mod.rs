@@ -225,6 +225,7 @@ impl DeepSeekChatCompletionsClient {
         json!({
             "model": model,
             "messages": [{ "role": "user", "content": input }],
+            "thinking": { "type": "disabled" },
             "stream": true,
         })
     }
@@ -337,6 +338,7 @@ mod tests {
 
         assert_eq!(body["model"], "deepseek-v4-flash");
         assert_eq!(body["stream"], true);
+        assert_eq!(body["thinking"]["type"], "disabled");
         assert_eq!(body["messages"][0]["role"], "user");
         assert_eq!(
             DeepSeekChatCompletionsClient::parse_sse_text_deltas(&records).unwrap(),

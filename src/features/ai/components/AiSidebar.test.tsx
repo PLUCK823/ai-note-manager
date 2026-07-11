@@ -45,6 +45,10 @@ vi.mock("../../../shared/lib/tauri", () => ({
   },
 }));
 
+vi.mock("./WorkspaceAssistant", () => ({
+  WorkspaceAssistant: () => null,
+}));
+
 describe("AiSidebar", () => {
   const writeTextMock = vi.fn();
 
@@ -139,6 +143,26 @@ describe("AiSidebar", () => {
       await screen.findByRole("dialog", { name: "Apply AI change" }),
     ).toBeInTheDocument();
     expect(screen.getByText("## Draft")).toBeInTheDocument();
+  });
+
+  it("surfaces an AI error that arrives before the action response resolves", async () => {
+    runAiActionMock.mockImplementation(async () => {
+      emitTauriEvent("ai:error", {
+        requestId: "early-error",
+        message: "ai_request_failed",
+      });
+      return { requestId: "early-error" };
+    });
+
+    render(<AiSidebar />);
+
+    await waitFor(() => {
+      expect(eventHandlers.get("ai:error")?.length).toBeGreaterThan(0);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Summarize" }));
+
+    expect(await screen.findByText("AI request failed.")).toBeInTheDocument();
+    expect(screen.queryByText("Running AI action...")).not.toBeInTheDocument();
   });
 
   it("cancels the active backend AI request", async () => {

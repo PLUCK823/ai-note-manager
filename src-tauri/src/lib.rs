@@ -43,6 +43,9 @@ pub fn run() {
             commands::ai::run_ai_action,
             commands::ai::apply_ai_change,
             commands::ai::cancel_ai_action,
+            commands::ai::plan_workspace_changes,
+            commands::ai::apply_workspace_plan,
+            commands::ai::check_ai_provider,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

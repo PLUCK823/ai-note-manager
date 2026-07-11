@@ -3,7 +3,12 @@ import { type ReactNode, useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "../../../shared/components/Button";
-import { getSettings, saveApiKey, updateSettings } from "../api";
+import {
+  checkAiProvider,
+  getSettings,
+  saveApiKey,
+  updateSettings,
+} from "../api";
 import type { AiProvider, AiReadScope, AppSettings } from "../types";
 
 const defaultSettings: AppSettings = {
@@ -105,6 +110,10 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
   const [apiKey, setApiKey] = useState("");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [connectionMessage, setConnectionMessage] = useState<string | null>(
+    null,
+  );
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const provider = settings.provider ?? "openai";
 
   async function handleSave() {
@@ -116,6 +125,21 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
     setSettings(savedSettings);
     queryClient.setQueryData(["settings"], savedSettings);
     setSaveMessage("Settings saved");
+  }
+
+  async function handleCheckConnection() {
+    setConnectionMessage(null);
+    setIsCheckingConnection(true);
+    try {
+      await checkAiProvider(settings);
+      setConnectionMessage(`${providerLabels[provider]} connection verified.`);
+    } catch {
+      setConnectionMessage(
+        `${providerLabels[provider]} could not be reached. Check the saved API key and model.`,
+      );
+    } finally {
+      setIsCheckingConnection(false);
+    }
   }
 
   return (
@@ -214,6 +238,19 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
           onChange={(event) => setApiKey(event.currentTarget.value)}
         />
       </label>
+      <Button
+        disabled={isCheckingConnection}
+        type="button"
+        variant="secondary"
+        onClick={() => void handleCheckConnection()}
+      >
+        {isCheckingConnection
+          ? "Checking connection..."
+          : "Check AI connection"}
+      </Button>
+      {connectionMessage ? (
+        <p className="settings-message">{connectionMessage}</p>
+      ) : null}
       <Button type="button" variant="primary" onClick={handleSave}>
         Save settings
       </Button>
