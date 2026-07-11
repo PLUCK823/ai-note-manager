@@ -2,7 +2,7 @@
 
 Date: 2026-07-11
 
-This document records the current implementation state of AI Note Manager after the first 95 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 96 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -145,7 +145,7 @@ This document records the current implementation state of AI Note Manager after 
     Evidence: `parseMarkdownBlocks` now recognizes both backtick and tilde fenced code blocks, preserves the fenced code body, and closes only on the matching fence marker. Frontend tests cover `~~~ts` fenced code rendering without exposing the raw fence marker.
 
 47. Markdown preview rendering supports spaced fenced code info strings.
-    Evidence: `parseMarkdownBlocks` now accepts a space between the opening fence marker and the info string, so fences like ```` ``` ts ```` render as code blocks instead of paragraphs. Frontend tests cover spaced info string code rendering without exposing the raw fence marker.
+    Evidence: `parseMarkdownBlocks` now accepts a space between the opening fence marker and the info string, so fences like ` ``` ts ` render as code blocks instead of paragraphs. Frontend tests cover spaced info string code rendering without exposing the raw fence marker.
 
 48. Markdown preview rendering supports indented code blocks.
     Evidence: `parseMarkdownBlocks` now recognizes top-level lines indented by four spaces or a tab as code blocks, strips the code indentation, and renders the result through the existing semantic code block preview. Frontend tests cover multi-line indented code rendering.
@@ -270,19 +270,19 @@ This document records the current implementation state of AI Note Manager after 
 88. AI assistant and vault navigation panes can swap positions.
     Evidence: `AppSettings` now includes `aiPaneOnLeft` boolean field defaulted to false. `AppLayout` extracts vault and AI pane JSX into named values and conditionally renders them in swapped order when `aiPaneOnLeft` is true, with corresponding resizer reordering. A swap button with an `ArrowLeftRight` icon in the workspace toolbar toggles the setting and persists it immediately. Rust tests cover `aiPaneOnLeft` serialization and default backfill. Frontend tests cover DOM order verification when swapped.
 
-93. Settings page exposes workspace layout controls for pane visibility and position.
+89. Settings page exposes workspace layout controls for pane visibility and position.
     Evidence: `SettingsPage` now includes checkboxes for "Show file navigation" (`leftPaneVisible`), "Show AI assistant" (`rightPaneVisible`), and "AI assistant on left side" (`aiPaneOnLeft`). These controls provide the same toggling capability as the toolbar buttons in the workspace, giving users a centralized place to configure their layout preferences.
 
-92. Desktop-shell smoke test covers editor view mode switching.
+90. Desktop-shell smoke test covers editor view mode switching.
     Evidence: `shell-smoke.mjs` now verifies the editor mode segmented control is rendered after vault restore, clicks the Preview mode button and asserts the preview surface renders note content, clicks the Edit mode button and verifies the switch, then returns to Split mode for the remaining test steps. A shared `assertElementPresent` helper was added for reuse in future smoke tests. The smoke test still does not drive native OS file picker dialogs.
 
 91. Markdown preview renders multiline blockquote paragraphs.
     Evidence: `parseBlockquote` now treats blank `>` lines (lines with only the `>` marker and no content) as paragraph separators. `joinBlockquoteBody` groups adjacent non-empty lines into paragraphs joined by spaces, then joins those paragraph groups with `\n` separators that the inline renderer renders as `<br>` elements. Frontend tests cover two-paragraph blockquotes separated by an empty `>` marker line.
 
-90. Markdown preview rendering strips HTML comments.
+92. Markdown preview rendering strips HTML comments.
     Evidence: `skipHtmlComment` detects lines starting with `<!--` and skips them (plus any continuation lines until `-->`). Single-line comments (opening and closing on the same line) are stripped. Multi-line comments are stripped in their entirety. Both are handled before any other block parsing so HTML content inside comments never leaks into rendered output. Frontend tests cover single-line and multi-line HTML comment stripping.
 
-89. Markdown preview rendering supports nested blockquotes.
+93. Markdown preview rendering supports nested blockquotes.
     Evidence: The `blockquote` block type now includes a `children: MarkdownBlock[]` field. `parseBlockquote` strips one level of `>` prefix from each line, detects inner lines that still start with `>` as nested blockquotes, re-parses the stripped body through `parseMarkdownBlocks`, collects nested blockquote blocks as children, and keeps remaining paragraph text in the parent quote. `MarkdownPreview` renders nested blockquotes recursively inside their parent `<blockquote>` element. Frontend tests cover a two-level nested blockquote with inline text.
 
 94. Workspace navigation uses a VS Code-style collapsible tree and restorable pane rails.
@@ -291,15 +291,18 @@ This document records the current implementation state of AI Note Manager after 
 95. Sidebar controls follow their physical workspace edge after pane swapping.
     Evidence: Expanded vault and AI sidebars now own their collapse button, labeled by the current physical edge (`Collapse left sidebar` or `Collapse right sidebar`); the central workspace toolbar retains only the pane-swap command. Collapsed sides render a fixed 44px rail with the matching physical-edge restore action, and no separator remains beside a rail. Frontend, browser smoke, and desktop-shell smoke tests cover collapsing the default left vault, swapping AI to the left, collapsing only that left AI sidebar, restoring it, and preserving the opposite sidebar.
 
+96. Settings open as a responsive modal and collapsed sidebars retain stable grid slots.
+    Evidence: The settings form is no longer mounted until the Settings action is selected; it opens in a centered, backdrop-protected `role="dialog"` with a close action and viewport-bounded height. `AppLayout` now always renders five physical grid slots (left pane, left separator, workspace, right separator, right pane), and collapses an adjacent separator track to `0px` while retaining a matching placeholder. This prevents the workspace from being auto-placed into a separator column, eliminates residual separator strips, and preserves physical-edge controls after swaps. Frontend regression tests cover the modal lifecycle and the collapsed separator slot; Playwright covers settings visibility and right-side collapse after swapping.
+
 ## Verification
 
-The latest full verification for the physical sidebar control completion point used:
+The latest full verification for the settings and sidebar layout repair used:
 
 ```bash
 pnpm check
 ```
 
-Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count at that point: 11 frontend test files / 103 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, 41 Rust tests.
+Result: frontend verification passed with `pnpm lint`, `pnpm test`, `pnpm e2e`, and `pnpm frontend:build`. Current frontend test count: 11 test files / 104 tests, plus 1 Playwright browser smoke test. The prior full desktop/Rust verification remains documented at completion point 95.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 
@@ -309,7 +312,7 @@ Each feature completion point above was saved as a Git commit and pushed to `ori
    The preview now covers common Markdown blocks, ATX headings with closing sequence trimming, Setext headings, thematic breaks, backtick and tilde fenced code blocks with compact or spaced info strings and variable-length fences, indented code blocks, paragraph hard line breaks, inline code spans including double-backtick spans with internal backticks, common inline formatting with asterisk and underscore emphasis, backslash-escaped punctuation including escaped backslashes before formatting markers, Markdown entity references in ordinary text, formatted inline text, and image alt text, strikethrough text, inline links with optional double-quoted, single-quoted, or parenthesized title text, full/collapsed/shortcut reference-style links with optional double-quoted, single-quoted, or parenthesized title text, HTTP and email autolinks, blockquotes including nested blockquotes, footnotes, nested unordered lists with `-`, `*`, and `+` markers, nested ordered lists with `.` and `)` markers plus start numbers, nested task lists with `-`, `*`, and `+` markers, pipe tables with or without outer pipes and column alignment, http/https images with optional double-quoted, single-quoted, or parenthesized title text, inline http/https images, local inline images, full/collapsed/shortcut reference-style images with optional double-quoted title text, local vault images, and task lists, but it does not yet support full CommonMark edge cases.
 
 2. Desktop-shell workflow coverage is still narrow.
-    The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, AI preview/apply behavior, editor view mode switching, pane collapse/restore, and pane position swapping, but it does not yet drive native OS file picker dialogs.
+   The desktop smoke test now launches a real Tauri shell and exercises real app-data/vault filesystem restore, note opening, editing, saving, disk write verification, search behavior, AI preview/apply behavior, editor view mode switching, pane collapse/restore, and pane position swapping, but it does not yet drive native OS file picker dialogs.
 
 3. Workspace layout customization is in its fifth phase.
    The file/navigation pane, workspace, AI assistant pane, and Split-mode editor/preview panes can be resized; pane sizes persist across restarts; primary panes scroll independently; the vault tree supports folder-level expansion; collapsed vault and AI panes remain recoverable from a narrow rail; AI and vault panes can swap positions; and every sidebar collapse or restore control follows the physical left or right edge after swapping. Split-mode editor/preview vertical scrolling can sync by proportional scroll position. Arbitrary panel reordering with drag-and-drop, docking to other edges, persisted per-folder expansion preferences, and block-level editor/preview source mapping are not implemented yet.

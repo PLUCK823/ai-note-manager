@@ -38,12 +38,16 @@ button {
 .app-shell {
   --ai-pane-width: 336px;
   --first-pane-width: 288px;
+  --first-separator-width: 8px;
   --preview-pane-width: 360px;
   --second-pane-width: 336px;
+  --second-separator-width: 8px;
   --vault-pane-width: 288px;
   display: grid;
   grid-template-columns:
-    var(--first-pane-width) 8px minmax(460px, 1fr) 8px
+    var(--first-pane-width) var(--first-separator-width) minmax(460px, 1fr) var(
+      --second-separator-width
+    )
     var(--second-pane-width);
   grid-template-rows: 1fr 34px;
   height: 100vh;
@@ -394,6 +398,12 @@ button {
 .workspace-resizer:hover::after,
 .workspace-resizer:focus-visible::after {
   background: #1f5f4a;
+}
+
+.workspace-separator-spacer {
+  min-width: 0;
+  min-height: 0;
+  pointer-events: none;
 }
 
 .note-tabs {
@@ -898,16 +908,31 @@ button {
   justify-content: center;
 }
 
-.settings-page {
+.settings-backdrop {
   position: fixed;
-  right: 18px;
-  bottom: 48px;
-  width: 320px;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(23, 32, 27, 0.24);
+}
+
+.settings-page {
+  width: min(480px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
   border: 1px solid rgba(23, 32, 27, 0.14);
   border-radius: 8px;
   padding: 14px;
   background: #fffdf8;
   box-shadow: 0 16px 42px rgba(23, 32, 27, 0.16);
+}
+
+.settings-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
 }
 
 .settings-section {

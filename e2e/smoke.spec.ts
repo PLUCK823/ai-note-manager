@@ -112,7 +112,9 @@ test("covers the core note workflow with mocked Tauri commands", async ({
           const eventId = Number(args?.eventId);
           eventListeners.set(
             eventName,
-            (eventListeners.get(eventName) ?? []).filter((id) => id !== eventId),
+            (eventListeners.get(eventName) ?? []).filter(
+              (id) => id !== eventId,
+            ),
           );
           return Promise.resolve();
         }
@@ -145,6 +147,15 @@ test("covers the core note workflow with mocked Tauri commands", async ({
 
   await page.goto("/");
 
+  const appShell = page.getByTestId("app-shell");
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(settingsDialog).toBeHidden();
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(settingsDialog).toBeVisible();
+  await expect(settingsDialog).toHaveAttribute("aria-modal", "true");
+  await page.getByRole("button", { name: "Close settings" }).click();
+  await expect(settingsDialog).toBeHidden();
+
   await page.getByRole("button", { name: /open vault/i }).click();
   await expect(page.getByText("/tmp/ai-note-manager-e2e")).toBeVisible();
   await expect(page.getByLabel("Markdown file tree")).toContainText(
@@ -152,11 +163,13 @@ test("covers the core note workflow with mocked Tauri commands", async ({
   );
 
   await page.getByRole("button", { name: "Launch Plan.md" }).click();
-  await expect(page.getByRole("heading", { name: "Launch Plan" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Launch Plan" }),
+  ).toBeVisible();
 
-  await page.getByRole("textbox", { name: "Markdown editor" }).fill(
-    "# Launch Plan\n\nShip the MVP safely.\n\n- Verify tests",
-  );
+  await page
+    .getByRole("textbox", { name: "Markdown editor" })
+    .fill("# Launch Plan\n\nShip the MVP safely.\n\n- Verify tests");
   await expect(page.getByText("Unsaved")).toBeVisible();
   await page.getByRole("button", { name: "Save note" }).click();
   await expect(page.getByText("Saved", { exact: true })).toBeVisible();
@@ -167,29 +180,35 @@ test("covers the core note workflow with mocked Tauri commands", async ({
   await page.getByRole("button", { name: "Move AI assistant to left" }).click();
   const aiSidebar = page.locator('aside[aria-label="AI assistant"]');
   const vaultSidebar = page.locator('aside[aria-label="Vault navigation"]');
-  await expect(aiSidebar).toHaveAttribute(
-    "data-edge",
-    "left",
-  );
+  await expect(aiSidebar).toHaveAttribute("data-edge", "left");
   await aiSidebar
     .getByRole("button", { name: "Collapse left sidebar" })
     .click();
-  const collapsedAiRail = page.locator('aside[aria-label="Collapsed AI assistant"]');
-  await expect(collapsedAiRail).toHaveAttribute(
-    "data-edge",
-    "left",
+  const collapsedAiRail = page.locator(
+    'aside[aria-label="Collapsed AI assistant"]',
   );
-  await expect(vaultSidebar).toHaveAttribute(
-    "data-edge",
-    "right",
-  );
+  await expect(collapsedAiRail).toHaveAttribute("data-edge", "left");
+  await expect(vaultSidebar).toHaveAttribute("data-edge", "right");
   await collapsedAiRail
     .getByRole("button", { name: "Expand left sidebar" })
     .click();
-  await expect(aiSidebar).toHaveAttribute(
-    "data-edge",
-    "left",
+  await expect(aiSidebar).toHaveAttribute("data-edge", "left");
+
+  await vaultSidebar
+    .getByRole("button", { name: "Collapse right sidebar" })
+    .click();
+  const collapsedVaultRail = page.locator(
+    'aside[aria-label="Collapsed file navigation"]',
   );
+  await expect(collapsedVaultRail).toHaveAttribute("data-edge", "right");
+  await expect(appShell).toHaveAttribute(
+    "style",
+    /--second-separator-width: 0px/,
+  );
+  await collapsedVaultRail
+    .getByRole("button", { name: "Expand right sidebar" })
+    .click();
+  await expect(vaultSidebar).toHaveAttribute("data-edge", "right");
 
   await page.getByRole("button", { name: "Rewrite" }).click();
   const applyDialog = page.getByRole("dialog", { name: "Apply AI change" });
@@ -199,5 +218,7 @@ test("covers the core note workflow with mocked Tauri commands", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Apply change" }).click();
   await expect(applyDialog).toBeHidden();
-  await expect(page.getByRole("heading", { name: "Launch Plan" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Launch Plan" }),
+  ).toBeVisible();
 });

@@ -6,7 +6,17 @@ import {
   useState,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeftRight, FileText, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, PanelRight, Search, Settings } from "lucide-react";
+import {
+  ArrowLeftRight,
+  FileText,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  PanelRight,
+  Search,
+  Settings,
+} from "lucide-react";
 
 import { AiSidebar } from "../features/ai/components/AiSidebar";
 import { DiskChangeNotice } from "../features/editor/components/DiskChangeNotice";
@@ -52,8 +62,13 @@ export function AppLayout() {
   const [userLeftWidth, setUserLeftWidth] = useState<number | null>(null);
   const [userRightWidth, setUserRightWidth] = useState<number | null>(null);
   const [userPreviewWidth, setUserPreviewWidth] = useState<number | null>(null);
-  const [editorScroller, setEditorScroller] = useState<HTMLElement | null>(null);
-  const [previewSurface, setPreviewSurface] = useState<HTMLElement | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [editorScroller, setEditorScroller] = useState<HTMLElement | null>(
+    null,
+  );
+  const [previewSurface, setPreviewSurface] = useState<HTMLElement | null>(
+    null,
+  );
   const isSyncingScrollRef = useRef(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showEditor = editorMode === "edit" || editorMode === "split";
@@ -63,18 +78,31 @@ export function AppLayout() {
   const rightPaneVisible = settingsQuery.data?.rightPaneVisible ?? true;
   const aiPaneOnLeft = settingsQuery.data?.aiPaneOnLeft ?? false;
   // Derive actual pane widths from user modifications or persisted settings
-  const leftWidth = userLeftWidth ?? settingsQuery.data?.leftPaneWidth ?? OUTER_LAYOUT_LIMITS.left.defaultValue;
-  const rightWidth = userRightWidth ?? settingsQuery.data?.rightPaneWidth ?? OUTER_LAYOUT_LIMITS.right.defaultValue;
-  const previewWidth = userPreviewWidth ?? settingsQuery.data?.previewPaneWidth ?? SPLIT_LAYOUT_LIMITS.preview.defaultValue;
+  const leftWidth =
+    userLeftWidth ??
+    settingsQuery.data?.leftPaneWidth ??
+    OUTER_LAYOUT_LIMITS.left.defaultValue;
+  const rightWidth =
+    userRightWidth ??
+    settingsQuery.data?.rightPaneWidth ??
+    OUTER_LAYOUT_LIMITS.right.defaultValue;
+  const previewWidth =
+    userPreviewWidth ??
+    settingsQuery.data?.previewPaneWidth ??
+    SPLIT_LAYOUT_LIMITS.preview.defaultValue;
   const vaultPaneWidth = leftPaneVisible ? leftWidth : COLLAPSED_PANE_WIDTH;
   const aiPaneWidth = rightPaneVisible ? rightWidth : COLLAPSED_PANE_WIDTH;
   const firstPaneWidth = aiPaneOnLeft ? aiPaneWidth : vaultPaneWidth;
   const secondPaneWidth = aiPaneOnLeft ? vaultPaneWidth : aiPaneWidth;
+  const firstPaneVisible = aiPaneOnLeft ? rightPaneVisible : leftPaneVisible;
+  const secondPaneVisible = aiPaneOnLeft ? leftPaneVisible : rightPaneVisible;
   const shellStyle = {
     "--vault-pane-width": `${vaultPaneWidth}px`,
     "--ai-pane-width": `${aiPaneWidth}px`,
     "--first-pane-width": `${firstPaneWidth}px`,
     "--second-pane-width": `${secondPaneWidth}px`,
+    "--first-separator-width": firstPaneVisible ? "8px" : "0px",
+    "--second-separator-width": secondPaneVisible ? "8px" : "0px",
     "--preview-pane-width": `${previewWidth}px`,
   } as CSSProperties;
 
@@ -127,7 +155,12 @@ export function AppLayout() {
   useEffect(() => {
     if (!settingsQuery.data) return;
     // Only save if user has modified the widths
-    if (userLeftWidth === null && userRightWidth === null && userPreviewWidth === null) return;
+    if (
+      userLeftWidth === null &&
+      userRightWidth === null &&
+      userPreviewWidth === null
+    )
+      return;
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -137,7 +170,8 @@ export function AppLayout() {
       const currentSettings = settingsQuery.data;
       const newLeftWidth = userLeftWidth ?? currentSettings.leftPaneWidth;
       const newRightWidth = userRightWidth ?? currentSettings.rightPaneWidth;
-      const newPreviewWidth = userPreviewWidth ?? currentSettings.previewPaneWidth;
+      const newPreviewWidth =
+        userPreviewWidth ?? currentSettings.previewPaneWidth;
       if (
         currentSettings.leftPaneWidth !== newLeftWidth ||
         currentSettings.rightPaneWidth !== newRightWidth ||
@@ -164,7 +198,13 @@ export function AppLayout() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [userLeftWidth, userRightWidth, userPreviewWidth, settingsQuery.data, queryClient]);
+  }, [
+    userLeftWidth,
+    userRightWidth,
+    userPreviewWidth,
+    settingsQuery.data,
+    queryClient,
+  ]);
 
   useEffect(() => {
     if (
@@ -216,7 +256,7 @@ export function AppLayout() {
     };
   }, [editorMode, editorScroller, previewSurface, syncPreviewScroll]);
 
-  function renderVaultItem(edge: "left" | "right") {
+  function renderVaultPane(edge: "left" | "right") {
     if (!leftPaneVisible) {
       return (
         <CollapsedPaneRail
@@ -229,14 +269,23 @@ export function AppLayout() {
     }
 
     const pane = (
-      <aside className="vault-pane" aria-label="Vault navigation" data-edge={edge}>
+      <aside
+        className="vault-pane"
+        aria-label="Vault navigation"
+        data-edge={edge}
+      >
         <div className="brand-bar">
           <div>
             <p className="eyebrow">Local Markdown</p>
             <h1>AI Note Manager</h1>
           </div>
           <div className="brand-actions">
-            <Button type="button" variant="ghost" aria-label="Settings">
+            <Button
+              type="button"
+              variant="ghost"
+              aria-label="Settings"
+              onClick={() => setSettingsOpen(true)}
+            >
               <Settings size={18} aria-hidden="true" />
             </Button>
             <Button
@@ -260,26 +309,10 @@ export function AppLayout() {
         <FileTree />
       </aside>
     );
-    const resizer = (
-      <ResizeSeparator
-        ariaLabel="Resize file navigation"
-        className="workspace-resizer"
-        max={OUTER_LAYOUT_LIMITS.left.max}
-        min={OUTER_LAYOUT_LIMITS.left.min}
-        value={leftWidth}
-        onResize={handleLeftWidthChange}
-        reverse={edge === "right"}
-      />
-    );
-
-    return edge === "left" ? (
-      <>{pane}{resizer}</>
-    ) : (
-      <>{resizer}{pane}</>
-    );
+    return pane;
   }
 
-  function renderAiItem(edge: "left" | "right") {
+  function renderAiPane(edge: "left" | "right") {
     if (!rightPaneVisible) {
       return (
         <CollapsedPaneRail
@@ -291,11 +324,52 @@ export function AppLayout() {
       );
     }
 
-    const pane = <AiSidebar edge={edge} onCollapse={toggleRightPane} />;
-    const resizer = (
+    return <AiSidebar edge={edge} onCollapse={toggleRightPane} />;
+  }
+
+  function renderVaultSeparator(edge: "left" | "right", slot: string) {
+    if (!leftPaneVisible) {
+      return (
+        <div
+          aria-hidden="true"
+          className="workspace-separator-spacer"
+          data-collapsed="true"
+          data-grid-slot={slot}
+        />
+      );
+    }
+
+    return (
+      <ResizeSeparator
+        ariaLabel="Resize file navigation"
+        className="workspace-resizer"
+        dataGridSlot={slot}
+        max={OUTER_LAYOUT_LIMITS.left.max}
+        min={OUTER_LAYOUT_LIMITS.left.min}
+        value={leftWidth}
+        onResize={handleLeftWidthChange}
+        reverse={edge === "right"}
+      />
+    );
+  }
+
+  function renderAiSeparator(edge: "left" | "right", slot: string) {
+    if (!rightPaneVisible) {
+      return (
+        <div
+          aria-hidden="true"
+          className="workspace-separator-spacer"
+          data-collapsed="true"
+          data-grid-slot={slot}
+        />
+      );
+    }
+
+    return (
       <ResizeSeparator
         ariaLabel="Resize AI assistant"
         className="workspace-resizer"
+        dataGridSlot={slot}
         max={OUTER_LAYOUT_LIMITS.right.max}
         min={OUTER_LAYOUT_LIMITS.right.min}
         value={rightWidth}
@@ -303,31 +377,40 @@ export function AppLayout() {
         reverse={edge === "right"}
       />
     );
-
-    return edge === "left" ? (
-      <>{pane}{resizer}</>
-    ) : (
-      <>{resizer}{pane}</>
-    );
   }
 
-  const firstItem = aiPaneOnLeft
-    ? renderAiItem("left")
-    : renderVaultItem("left");
-  const secondItem = aiPaneOnLeft
-    ? renderVaultItem("right")
-    : renderAiItem("right");
+  const firstPane = aiPaneOnLeft
+    ? renderAiPane("left")
+    : renderVaultPane("left");
+  const firstSeparator = aiPaneOnLeft
+    ? renderAiSeparator("left", "left-separator")
+    : renderVaultSeparator("left", "left-separator");
+  const secondSeparator = aiPaneOnLeft
+    ? renderVaultSeparator("right", "right-separator")
+    : renderAiSeparator("right", "right-separator");
+  const secondPane = aiPaneOnLeft
+    ? renderVaultPane("right")
+    : renderAiPane("right");
 
   return (
     <div className="app-shell" data-testid="app-shell" style={shellStyle}>
-      {firstItem}
+      {firstPane}
+      {firstSeparator}
 
-      <main className="workspace" aria-label="Note workspace">
+      <main
+        className="workspace"
+        aria-label="Note workspace"
+        data-grid-slot="workspace"
+      >
         <div className="workspace-toolbar-top">
           <Button
             type="button"
             variant="ghost"
-            aria-label={aiPaneOnLeft ? "Move AI assistant to right" : "Move AI assistant to left"}
+            aria-label={
+              aiPaneOnLeft
+                ? "Move AI assistant to right"
+                : "Move AI assistant to left"
+            }
             onClick={toggleSwapPanes}
           >
             <ArrowLeftRight size={16} aria-hidden="true" />
@@ -384,11 +467,14 @@ export function AppLayout() {
               reverse
             />
           ) : null}
-          {showPreview ? <MarkdownPreview surfaceRef={setPreviewSurface} /> : null}
+          {showPreview ? (
+            <MarkdownPreview surfaceRef={setPreviewSurface} />
+          ) : null}
         </section>
       </main>
 
-      {secondItem}
+      {secondSeparator}
+      {secondPane}
 
       <footer className="status-bar" aria-label="Application status">
         <span>
@@ -401,7 +487,10 @@ export function AppLayout() {
         </span>
       </footer>
 
-      <SettingsPage />
+      <SettingsPage
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 }
@@ -442,6 +531,7 @@ function CollapsedPaneRail({
 function ResizeSeparator({
   ariaLabel,
   className,
+  dataGridSlot,
   max,
   min,
   onResize,
@@ -450,6 +540,7 @@ function ResizeSeparator({
 }: {
   ariaLabel: string;
   className: string;
+  dataGridSlot?: string;
   max: number;
   min: number;
   onResize: (value: number) => void;
@@ -487,6 +578,8 @@ function ResizeSeparator({
       aria-valuemin={min}
       aria-valuenow={value}
       className={className}
+      data-collapsed="false"
+      data-grid-slot={dataGridSlot}
       role="separator"
       tabIndex={0}
       onKeyDown={(event) => {

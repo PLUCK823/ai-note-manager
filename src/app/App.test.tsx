@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -84,6 +90,31 @@ describe("App", () => {
     expect(
       screen.getByRole("button", { name: /settings/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Settings" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens and closes the centered settings dialog from the settings button", async () => {
+    render(
+      <TestProviders>
+        <App />
+      </TestProviders>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Settings" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveClass("settings-page");
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Close settings" }),
+    );
+
+    expect(
+      screen.queryByRole("dialog", { name: "Settings" }),
+    ).not.toBeInTheDocument();
   });
 
   it("switches between edit, split, and preview editor modes", () => {
@@ -183,12 +214,20 @@ describe("App", () => {
       </TestProviders>,
     );
 
-    await screen.findByLabelText("Sync editor and preview scrolling");
+    await waitFor(() => expect(getSettingsMock).toHaveBeenCalled());
 
-    const editorScroller = container.querySelector(".cm-scroller") as HTMLElement;
+    const editorScroller = container.querySelector(
+      ".cm-scroller",
+    ) as HTMLElement;
     const previewSurface = screen.getByLabelText("Markdown preview");
-    defineScrollMetrics(editorScroller, { clientHeight: 100, scrollHeight: 500 });
-    defineScrollMetrics(previewSurface, { clientHeight: 200, scrollHeight: 800 });
+    defineScrollMetrics(editorScroller, {
+      clientHeight: 100,
+      scrollHeight: 500,
+    });
+    defineScrollMetrics(previewSurface, {
+      clientHeight: 200,
+      scrollHeight: 800,
+    });
 
     editorScroller.scrollTop = 100;
     fireEvent.scroll(editorScroller);
@@ -205,12 +244,20 @@ describe("App", () => {
       </TestProviders>,
     );
 
-    await screen.findByLabelText("Sync editor and preview scrolling");
+    await waitFor(() => expect(getSettingsMock).toHaveBeenCalled());
 
-    const editorScroller = container.querySelector(".cm-scroller") as HTMLElement;
+    const editorScroller = container.querySelector(
+      ".cm-scroller",
+    ) as HTMLElement;
     const previewSurface = screen.getByLabelText("Markdown preview");
-    defineScrollMetrics(editorScroller, { clientHeight: 100, scrollHeight: 500 });
-    defineScrollMetrics(previewSurface, { clientHeight: 200, scrollHeight: 800 });
+    defineScrollMetrics(editorScroller, {
+      clientHeight: 100,
+      scrollHeight: 500,
+    });
+    defineScrollMetrics(previewSurface, {
+      clientHeight: 200,
+      scrollHeight: 800,
+    });
 
     previewSurface.scrollTop = 300;
     fireEvent.scroll(previewSurface);
@@ -239,15 +286,24 @@ describe("App", () => {
       </TestProviders>,
     );
 
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     const syncToggle = await screen.findByLabelText(
       "Sync editor and preview scrolling",
     );
     expect(syncToggle).not.toBeChecked();
 
-    const editorScroller = container.querySelector(".cm-scroller") as HTMLElement;
+    const editorScroller = container.querySelector(
+      ".cm-scroller",
+    ) as HTMLElement;
     const previewSurface = screen.getByLabelText("Markdown preview");
-    defineScrollMetrics(editorScroller, { clientHeight: 100, scrollHeight: 500 });
-    defineScrollMetrics(previewSurface, { clientHeight: 200, scrollHeight: 800 });
+    defineScrollMetrics(editorScroller, {
+      clientHeight: 100,
+      scrollHeight: 500,
+    });
+    defineScrollMetrics(previewSurface, {
+      clientHeight: 200,
+      scrollHeight: 800,
+    });
 
     editorScroller.scrollTop = 100;
     fireEvent.scroll(editorScroller);
@@ -343,10 +399,12 @@ describe("App", () => {
 
     // Left pane should not be visible
     await waitFor(() => {
-      expect(screen.queryByLabelText("Vault navigation")).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText("Vault navigation"),
+      ).not.toBeInTheDocument();
     });
     // Left pane toggle button should be visible (the floating one when pane is hidden)
-    const showButtons = screen.getAllByLabelText("Show file navigation");
+    const showButtons = screen.getAllByLabelText("Expand left sidebar");
     expect(showButtons.length).toBeGreaterThan(0);
     // Right pane should still be visible
     expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
@@ -382,7 +440,7 @@ describe("App", () => {
       expect(screen.queryByLabelText("AI assistant")).not.toBeInTheDocument();
     });
     // Right pane toggle button should be visible
-    const showButtons = screen.getAllByLabelText("Show AI assistant");
+    const showButtons = screen.getAllByLabelText("Expand right sidebar");
     expect(showButtons.length).toBeGreaterThan(0);
   });
 
@@ -417,7 +475,7 @@ describe("App", () => {
 
     // Verify AI pane appears before vault navigation in DOM order
     await waitFor(() => {
-      const allAsides = container.querySelectorAll('.app-shell > aside');
+      const allAsides = container.querySelectorAll(".app-shell > aside");
       expect(allAsides[0]?.getAttribute("aria-label")).toBe("AI assistant");
     });
   });
@@ -442,10 +500,14 @@ describe("App", () => {
     ).toBeInTheDocument();
     const workspace = screen.getByLabelText("Note workspace");
     expect(
-      within(workspace).queryByRole("button", { name: "Collapse left sidebar" }),
+      within(workspace).queryByRole("button", {
+        name: "Collapse left sidebar",
+      }),
     ).not.toBeInTheDocument();
     expect(
-      within(workspace).queryByRole("button", { name: "Collapse right sidebar" }),
+      within(workspace).queryByRole("button", {
+        name: "Collapse right sidebar",
+      }),
     ).not.toBeInTheDocument();
   });
 
@@ -507,7 +569,9 @@ describe("App", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
     });
-    expect(screen.queryByLabelText("Collapsed AI assistant")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Collapsed AI assistant"),
+    ).not.toBeInTheDocument();
   });
 
   it("collapses the vault from the physical left sidebar in the default layout", async () => {
@@ -518,17 +582,24 @@ describe("App", () => {
     );
 
     const vault = await screen.findByLabelText("Vault navigation");
-    await screen.findByLabelText("Sync editor and preview scrolling");
+    await waitFor(() => expect(getSettingsMock).toHaveBeenCalled());
     fireEvent.click(
       within(vault).getByRole("button", { name: "Collapse left sidebar" }),
     );
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Collapsed file navigation")).toHaveAttribute(
-        "data-edge",
-        "left",
-      );
+      expect(
+        screen.getByLabelText("Collapsed file navigation"),
+      ).toHaveAttribute("data-edge", "left");
     });
+    const shell = screen.getByTestId("app-shell");
+    expect(shell).toHaveStyle({ "--first-separator-width": "0px" });
+    expect(
+      shell.querySelector('[data-grid-slot="left-separator"]'),
+    ).toHaveAttribute("data-collapsed", "true");
+    expect(shell.querySelector('[data-grid-slot="workspace"]')).toBe(
+      screen.getByLabelText("Note workspace"),
+    );
     expect(screen.getByLabelText("AI assistant")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Collapse left sidebar" }),
