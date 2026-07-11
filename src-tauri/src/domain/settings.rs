@@ -8,9 +8,31 @@ pub enum AiReadScope {
     FullVault,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AiProvider {
+    Openai,
+    Deepseek,
+}
+
+impl AiProvider {
+    pub fn key_name(&self) -> &'static str {
+        match self {
+            Self::Openai => "openai",
+            Self::Deepseek => "deepseek",
+        }
+    }
+}
+
+fn default_ai_provider() -> AiProvider {
+    AiProvider::Openai
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
+    #[serde(default = "default_ai_provider")]
+    pub provider: AiProvider,
     pub model: String,
     pub ai_read_scope: AiReadScope,
     pub autosave: bool,
@@ -59,11 +81,12 @@ pub struct SaveKeyResult {
 
 #[cfg(test)]
 mod tests {
-    use super::{AiReadScope, AppSettings};
+    use super::{AiProvider, AiReadScope, AppSettings};
 
     #[test]
     fn settings_serialize_to_frontend_camel_case_contract() {
         let settings = AppSettings {
+            provider: AiProvider::Openai,
             model: "gpt-4.1-mini".to_string(),
             ai_read_scope: AiReadScope::CurrentNote,
             autosave: true,
@@ -79,6 +102,7 @@ mod tests {
         let value = serde_json::to_value(settings).unwrap();
 
         assert_eq!(value["aiReadScope"], "current_note");
+        assert_eq!(value["provider"], "openai");
         assert_eq!(value["syncPreviewScroll"], true);
         assert_eq!(value["leftPaneWidth"], 288);
         assert_eq!(value["rightPaneWidth"], 336);
@@ -94,5 +118,27 @@ mod tests {
         assert!(value.get("left_pane_visible").is_none());
         assert!(value.get("right_pane_visible").is_none());
         assert!(value.get("ai_pane_on_left").is_none());
+    }
+
+    #[test]
+    fn preserves_the_selected_ai_provider_in_the_frontend_contract() {
+        let settings: AppSettings = serde_json::from_value(serde_json::json!({
+            "provider": "deepseek",
+            "model": "deepseek-v4-flash",
+            "aiReadScope": "current_note",
+            "autosave": true,
+            "syncPreviewScroll": true,
+            "leftPaneWidth": 288,
+            "rightPaneWidth": 336,
+            "previewPaneWidth": 360,
+            "leftPaneVisible": true,
+            "rightPaneVisible": true,
+            "aiPaneOnLeft": false
+        }))
+        .unwrap();
+
+        let value = serde_json::to_value(settings).unwrap();
+
+        assert_eq!(value["provider"], "deepseek");
     }
 }

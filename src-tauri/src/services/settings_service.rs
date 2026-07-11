@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::domain::settings::{AiReadScope, AppSettings, SaveKeyResult};
+use crate::domain::settings::{AiProvider, AiReadScope, AppSettings, SaveKeyResult};
 use crate::error::AppError;
 
 pub trait SecretStore {
@@ -63,6 +63,7 @@ impl SettingsService {
 
     fn default_settings() -> AppSettings {
         AppSettings {
+            provider: AiProvider::Openai,
             model: "gpt-4.1-mini".to_string(),
             ai_read_scope: AiReadScope::CurrentNote,
             autosave: true,
@@ -82,7 +83,7 @@ mod tests {
     use std::cell::RefCell;
     use std::fs;
 
-    use crate::domain::settings::{AiReadScope, AppSettings};
+    use crate::domain::settings::{AiProvider, AiReadScope, AppSettings};
 
     use super::{SecretStore, SettingsService};
 
@@ -90,6 +91,7 @@ mod tests {
     fn persists_non_sensitive_settings_to_app_data() {
         let root = test_root("persist-settings");
         let settings = AppSettings {
+            provider: AiProvider::Openai,
             model: "gpt-4.1".to_string(),
             ai_read_scope: AiReadScope::LinkedNotes,
             autosave: false,

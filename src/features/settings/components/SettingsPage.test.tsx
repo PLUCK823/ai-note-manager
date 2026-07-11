@@ -33,8 +33,9 @@ describe("SettingsPage", () => {
     saveApiKeyMock.mockReset();
   });
 
-  it("loads settings and saves model, privacy, autosave, and API key", async () => {
+  it("saves the selected provider, model, and provider-specific API key", async () => {
     getSettingsMock.mockResolvedValue({
+      provider: "openai",
       model: "gpt-4.1-mini",
       aiReadScope: "current_note",
       autosave: true,
@@ -45,8 +46,11 @@ describe("SettingsPage", () => {
 
     render(<SettingsPage />, { wrapper: TestProvider });
 
-    const modelInput = await screen.findByLabelText("Model");
-    fireEvent.change(modelInput, { target: { value: "gpt-4.1" } });
+    const providerInput = await screen.findByLabelText("AI provider");
+    fireEvent.change(providerInput, { target: { value: "deepseek" } });
+    fireEvent.change(screen.getByLabelText("Model"), {
+      target: { value: "deepseek-v4-flash" },
+    });
     fireEvent.change(screen.getByLabelText("AI read scope"), {
       target: { value: "full_vault" },
     });
@@ -59,13 +63,23 @@ describe("SettingsPage", () => {
 
     await waitFor(() => {
       expect(updateSettingsMock).toHaveBeenCalledWith({
-        model: "gpt-4.1",
+        provider: "deepseek",
+        model: "deepseek-v4-flash",
         aiReadScope: "full_vault",
         autosave: false,
         syncPreviewScroll: false,
       });
     });
-    expect(saveApiKeyMock).toHaveBeenCalledWith("openai", "sk-test");
+    expect(saveApiKeyMock).toHaveBeenCalledWith("deepseek", "sk-test");
+    expect(
+      screen.queryByLabelText("Show file navigation"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Show AI assistant"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("AI assistant on left side"),
+    ).not.toBeInTheDocument();
     expect(await screen.findByText("Settings saved")).toBeInTheDocument();
   });
 });

@@ -5,8 +5,9 @@ use crate::domain::ai::{
     AiRunInput, AiStreamChunk, AiStreamDone, AiStreamError, AiStreamStarted, ApplyChangeInput,
     ApplyChangeResult,
 };
+use crate::domain::settings::AiProvider;
 use crate::error::AppError;
-use crate::infrastructure::ai::OpenAiResponsesClient;
+use crate::infrastructure::ai::{DeepSeekChatCompletionsClient, OpenAiResponsesClient};
 use crate::infrastructure::security::SecretStore;
 use crate::services::ai_service::AiService;
 use crate::services::note_service::NoteService;
@@ -72,19 +73,34 @@ async fn run_ai_action_stream(
         .app_data_dir()
         .map_err(|_| AppError::PermissionDenied)?;
     let settings = SettingsService::get_settings(app_data_dir)?;
-    let Some(api_key) = SettingsService::get_api_key(&SecretStore, "openai")? else {
+    let Some(api_key) = SettingsService::get_api_key(&SecretStore, settings.provider.key_name())?
+    else {
         let output = AiService::run_action(input).map(|result| result.output)?;
         return emit_local_ai_chunks(&app, &request_id, &output).await;
     };
 
-    OpenAiResponsesClient::default()
-        .stream_text(
-            &api_key,
-            &settings.model,
-            &AiService::provider_input(&input),
-            |chunk| emit_ai_chunk(&app, &request_id, chunk),
-        )
-        .await
+    match settings.provider {
+        AiProvider::Openai => {
+            OpenAiResponsesClient::default()
+                .stream_text(
+                    &api_key,
+                    &settings.model,
+                    &AiService::provider_input(&input),
+                    |chunk| emit_ai_chunk(&app, &request_id, chunk),
+                )
+                .await
+        }
+        AiProvider::Deepseek => {
+            DeepSeekChatCompletionsClient::default()
+                .stream_text(
+                    &api_key,
+                    &settings.model,
+                    &AiService::provider_input(&input),
+                    |chunk| emit_ai_chunk(&app, &request_id, chunk),
+                )
+                .await
+        }
+    }
 }
 
 async fn emit_local_ai_chunks(

@@ -1,10 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
+  File,
+  FilePlus,
+  Folder,
+  FolderPlus,
+  RefreshCw,
+} from "lucide-react";
 import { useState } from "react";
 
 import { useEditorStore } from "../../editor/editorState";
 import { useVaultStore } from "../../vault/hooks";
-import { listMarkdownFiles, readNote } from "../api";
+import { createFolder, createNote, listMarkdownFiles, readNote } from "../api";
 import { useNotesStore } from "../hooks";
 import type { FileTreeNode } from "../types";
 
@@ -13,6 +22,7 @@ const EMPTY_FOLDER_EXPANSION = new Map<string, boolean>();
 
 export function FileTree() {
   const currentVault = useVaultStore((state) => state.currentVault);
+  const queryClient = useQueryClient();
   const fileTreeQuery = useQuery({
     queryKey: ["markdown-files", currentVault?.id],
     queryFn: () => listMarkdownFiles(currentVault!.id),
@@ -24,6 +34,10 @@ export function FileTree() {
     vaultId: null as string | null,
     values: new Map<string, boolean>(),
   }));
+  const [rootExpanded, setRootExpanded] = useState(true);
+  const [createKind, setCreateKind] = useState<"file" | "folder" | null>(null);
+  const [newEntryName, setNewEntryName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
   const visibleFolderExpansion =
     folderExpansion.vaultId === currentVault?.id
       ? folderExpansion.values
@@ -64,22 +78,136 @@ export function FileTree() {
     });
   }
 
+  function collapseAll() {
+    setRootExpanded(false);
+  }
+
+  async function createRootEntry() {
+    if (!currentVault || !createKind || !newEntryName.trim()) {
+      return;
+    }
+
+    setCreateError(null);
+    try {
+      if (createKind === "file") {
+        await createNote(currentVault.id, "", newEntryName.trim());
+      } else {
+        await createFolder(currentVault.id, "", newEntryName.trim());
+      }
+      setNewEntryName("");
+      setCreateKind(null);
+      setRootExpanded(true);
+      await queryClient.invalidateQueries({
+        queryKey: ["markdown-files", currentVault.id],
+      });
+    } catch {
+      setCreateError(
+        createKind === "file"
+          ? "Failed to create file."
+          : "Failed to create folder.",
+      );
+    }
+  }
+
+  function beginCreate(kind: "file" | "folder") {
+    setCreateKind(kind);
+    setCreateError(null);
+    setNewEntryName("");
+  }
+
   return (
     <nav className="file-tree" aria-label="Markdown file tree">
-      {nodes.length > 0 ? (
-        nodes.map((node) => (
-          <TreeNode
-            activePath={activePath}
-            depth={0}
-            folderExpansion={visibleFolderExpansion}
-            key={node.path}
-            node={node}
-            onToggleFolder={toggleFolder}
-          />
-        ))
-      ) : (
-        <span className="empty-tree">No Markdown files found.</span>
-      )}
+      <div className="tree-root-header">
+        <button
+          aria-expanded={rootExpanded}
+          className="tree-root-toggle"
+          type="button"
+          onClick={() => setRootExpanded((expanded) => !expanded)}
+        >
+          {rootExpanded ? (
+            <ChevronDown size={16} />
+          ) : (
+            <ChevronRight size={16} />
+          )}
+          <Folder size={16} aria-hidden="true" />
+          <span>{currentVault.name}</span>
+        </button>
+        <div className="tree-actions" aria-label="File tree actions">
+          <button
+            aria-label="New file"
+            title="New file"
+            type="button"
+            onClick={() => beginCreate("file")}
+          >
+            <FilePlus size={16} aria-hidden="true" />
+          </button>
+          <button
+            aria-label="New folder"
+            title="New folder"
+            type="button"
+            onClick={() => beginCreate("folder")}
+          >
+            <FolderPlus size={16} aria-hidden="true" />
+          </button>
+          <button
+            aria-label="Refresh file tree"
+            title="Refresh file tree"
+            type="button"
+            onClick={() => void fileTreeQuery.refetch()}
+          >
+            <RefreshCw size={16} aria-hidden="true" />
+          </button>
+          <button
+            aria-label="Collapse all folders"
+            title="Collapse all folders"
+            type="button"
+            onClick={collapseAll}
+          >
+            <ChevronsUpDown size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      {createKind ? (
+        <form
+          className="tree-create-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void createRootEntry();
+          }}
+        >
+          <label>
+            {createKind === "file" ? "New file name" : "New folder name"}
+            <input
+              autoFocus
+              value={newEntryName}
+              onChange={(event) => setNewEntryName(event.currentTarget.value)}
+            />
+          </label>
+          <button type="submit">
+            {createKind === "file" ? "Create file" : "Create folder"}
+          </button>
+          <button type="button" onClick={() => setCreateKind(null)}>
+            Cancel
+          </button>
+        </form>
+      ) : null}
+      {createError ? <p className="inline-error">{createError}</p> : null}
+      {rootExpanded ? (
+        nodes.length > 0 ? (
+          nodes.map((node) => (
+            <TreeNode
+              activePath={activePath}
+              depth={0}
+              folderExpansion={visibleFolderExpansion}
+              key={node.path}
+              node={node}
+              onToggleFolder={toggleFolder}
+            />
+          ))
+        ) : (
+          <span className="empty-tree">No Markdown files found.</span>
+        )
+      ) : null}
     </nav>
   );
 }

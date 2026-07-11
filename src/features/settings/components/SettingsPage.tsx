@@ -4,9 +4,10 @@ import { X } from "lucide-react";
 
 import { Button } from "../../../shared/components/Button";
 import { getSettings, saveApiKey, updateSettings } from "../api";
-import type { AiReadScope, AppSettings } from "../types";
+import type { AiProvider, AiReadScope, AppSettings } from "../types";
 
 const defaultSettings: AppSettings = {
+  provider: "openai",
   model: "gpt-4.1-mini",
   aiReadScope: "current_note",
   autosave: true,
@@ -17,6 +18,16 @@ const defaultSettings: AppSettings = {
   leftPaneVisible: true,
   rightPaneVisible: true,
   aiPaneOnLeft: false,
+};
+
+const providerModels: Record<AiProvider, string[]> = {
+  openai: ["gpt-4.1-mini", "gpt-4.1"],
+  deepseek: ["deepseek-v4-flash", "deepseek-v4-pro"],
+};
+
+const providerLabels: Record<AiProvider, string> = {
+  openai: "OpenAI",
+  deepseek: "DeepSeek",
 };
 
 interface SettingsPageProps {
@@ -94,12 +105,13 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
   const [apiKey, setApiKey] = useState("");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const provider = settings.provider ?? "openai";
 
   async function handleSave() {
     setSaveMessage(null);
     const savedSettings = await updateSettings(settings);
     if (apiKey.trim()) {
-      await saveApiKey("openai", apiKey.trim());
+      await saveApiKey(provider, apiKey.trim());
     }
     setSettings(savedSettings);
     queryClient.setQueryData(["settings"], savedSettings);
@@ -110,8 +122,29 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
     <section className="settings-section" aria-label="Settings panel">
       <h3>Settings</h3>
       <label>
+        AI provider
+        <select
+          value={provider}
+          onChange={(event) => {
+            const nextProvider = event.currentTarget.value as AiProvider;
+            setSettings((current) => ({
+              ...current,
+              provider: nextProvider,
+              model: providerModels[nextProvider][0],
+            }));
+          }}
+        >
+          {(Object.keys(providerLabels) as AiProvider[]).map((value) => (
+            <option key={value} value={value}>
+              {providerLabels[value]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
         Model
         <input
+          list={`models-for-${provider}`}
           value={settings.model}
           onChange={(event) => {
             const model = event.currentTarget.value;
@@ -121,6 +154,11 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
             }));
           }}
         />
+        <datalist id={`models-for-${provider}`}>
+          {providerModels[provider].map((model) => (
+            <option key={model} value={model} />
+          ))}
+        </datalist>
       </label>
       <label>
         AI read scope
@@ -166,48 +204,6 @@ function SettingsForm({ initialSettings }: { initialSettings: AppSettings }) {
           }}
         />
         Sync editor and preview scrolling
-      </label>
-      <label className="checkbox-label">
-        <input
-          checked={settings.leftPaneVisible}
-          type="checkbox"
-          onChange={(event) => {
-            const leftPaneVisible = event.currentTarget.checked;
-            setSettings((current) => ({
-              ...current,
-              leftPaneVisible,
-            }));
-          }}
-        />
-        Show file navigation
-      </label>
-      <label className="checkbox-label">
-        <input
-          checked={settings.rightPaneVisible}
-          type="checkbox"
-          onChange={(event) => {
-            const rightPaneVisible = event.currentTarget.checked;
-            setSettings((current) => ({
-              ...current,
-              rightPaneVisible,
-            }));
-          }}
-        />
-        Show AI assistant
-      </label>
-      <label className="checkbox-label">
-        <input
-          checked={settings.aiPaneOnLeft}
-          type="checkbox"
-          onChange={(event) => {
-            const aiPaneOnLeft = event.currentTarget.checked;
-            setSettings((current) => ({
-              ...current,
-              aiPaneOnLeft,
-            }));
-          }}
-        />
-        AI assistant on left side
       </label>
       <label>
         API key

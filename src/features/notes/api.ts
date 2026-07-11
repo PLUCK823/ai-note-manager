@@ -13,6 +13,26 @@ export function readNote(vaultId: string, path: string) {
   return callCommand<NoteContent>("read_note", { vaultId, path });
 }
 
+export function createNote(vaultId: string, parentPath: string, title: string) {
+  return callCommand<{ path: string; title: string }>("create_note", {
+    vaultId,
+    parentPath,
+    title,
+  });
+}
+
+export function createFolder(
+  vaultId: string,
+  parentPath: string,
+  name: string,
+) {
+  return callCommand<FileTreeNode>("create_folder", {
+    vaultId,
+    parentPath,
+    name,
+  });
+}
+
 export function checkNoteStatus(
   vaultId: string,
   path: string,

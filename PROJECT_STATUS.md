@@ -2,7 +2,7 @@
 
 Date: 2026-07-11
 
-This document records the current implementation state of AI Note Manager after the first 96 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 98 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -294,15 +294,21 @@ This document records the current implementation state of AI Note Manager after 
 96. Settings open as a responsive modal and collapsed sidebars retain stable grid slots.
     Evidence: The settings form is no longer mounted until the Settings action is selected; it opens in a centered, backdrop-protected `role="dialog"` with a close action and viewport-bounded height. `AppLayout` now always renders five physical grid slots (left pane, left separator, workspace, right separator, right pane), and collapses an adjacent separator track to `0px` while retaining a matching placeholder. This prevents the workspace from being auto-placed into a separator column, eliminates residual separator strips, and preserves physical-edge controls after swaps. Frontend regression tests cover the modal lifecycle and the collapsed separator slot; Playwright covers settings visibility and right-side collapse after swapping.
 
+97. AI provider configuration supports OpenAI and DeepSeek.
+    Evidence: `AppSettings` now persists a provider identity, backfills existing settings to OpenAI, and keeps each provider's API key in a separate system keyring entry. The settings dialog offers provider selection, provider-aware model suggestions, and provider-aware API key saving while removing the three redundant layout visibility/placement controls. `run_ai_action` dispatches OpenAI to the existing Responses API client and DeepSeek to `https://api.deepseek.com/chat/completions` using OpenAI-compatible streaming Chat Completions SSE parsing. Rust tests cover provider serialization/backfill and DeepSeek request/delta parsing; frontend and Playwright tests cover DeepSeek selection and key saving.
+
+98. The vault navigation renders a root-level VS Code-style Explorer toolbar.
+    Evidence: `FileTree` now renders the selected `VaultInfo.name` as a disclosure root, so a vault such as `/Users/plucky_hz/Desktop/PRD` visibly starts at `PRD`. Icon-only New File, New Folder, Refresh, and Collapse All controls operate on that active vault root. Root-level creation uses existing Tauri `create_note` and `create_folder` commands with an empty parent path, preserving backend path validation, and invalidates the exact tree query after success. Frontend and Playwright tests cover the root controls, collapse/refresh, and creating a root Markdown file.
+
 ## Verification
 
-The latest full verification for the settings and sidebar layout repair used:
+The latest full verification for multi-provider configuration and the vault Explorer used:
 
 ```bash
 pnpm check
 ```
 
-Result: frontend verification passed with `pnpm lint`, `pnpm test`, `pnpm e2e`, and `pnpm frontend:build`. Current frontend test count: 11 test files / 104 tests, plus 1 Playwright browser smoke test. The prior full desktop/Rust verification remains documented at completion point 95.
+Result: passed. It ran TypeScript typecheck, ESLint, Vitest, Playwright, the desktop-shell smoke test, Rust fmt, Rust clippy with `-D warnings`, and Rust tests. Current test count: 11 frontend test files / 108 frontend tests, 1 Playwright browser smoke test, 1 desktop-shell smoke test, and 43 Rust tests.
 
 Each feature completion point above was saved as a Git commit and pushed to `origin/main`.
 

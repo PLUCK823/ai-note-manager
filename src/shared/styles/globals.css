@@ -279,6 +279,101 @@ button {
   gap: 2px;
 }
 
+.tree-root-header {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  margin: 2px 0 4px;
+  border-bottom: 1px solid rgba(23, 32, 27, 0.14);
+}
+
+.tree-root-toggle {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+  border: 0;
+  padding: 6px 4px;
+  color: #26342c;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.tree-root-toggle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-root-toggle:hover {
+  color: #173f31;
+}
+
+.tree-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.tree-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 4px;
+  color: #526057;
+  background: transparent;
+}
+
+.tree-actions button:hover,
+.tree-actions button:focus-visible {
+  color: #173f31;
+  background: rgba(31, 95, 74, 0.12);
+  outline: none;
+}
+
+.tree-create-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 5px;
+  margin: 2px 0 6px;
+}
+
+.tree-create-form label {
+  display: grid;
+  gap: 3px;
+  color: #5c655f;
+  font-size: 0.7rem;
+}
+
+.tree-create-form input {
+  min-width: 0;
+  min-height: 28px;
+  border: 1px solid rgba(23, 32, 27, 0.2);
+  border-radius: 4px;
+  padding: 0 7px;
+  color: #17201b;
+  background: #fffaf4;
+}
+
+.tree-create-form button {
+  min-height: 28px;
+  border: 1px solid rgba(23, 32, 27, 0.16);
+  border-radius: 4px;
+  padding: 0 7px;
+  color: #344239;
+  background: rgba(255, 255, 255, 0.66);
+  font-size: 0.72rem;
+}
+
 .empty-tree {
   color: #6c766e;
   font-size: 0.85rem;

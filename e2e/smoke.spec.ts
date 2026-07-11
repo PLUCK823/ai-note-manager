@@ -12,7 +12,16 @@ test("covers the core note workflow with mocked Tauri commands", async ({
     };
     let content = "# Launch Plan\n\nShip the MVP safely.";
     let contentHash = "hash-initial";
+    let fileTree = [
+      {
+        name: "Launch Plan.md",
+        path: "Launch Plan.md",
+        kind: "file",
+        children: [],
+      },
+    ];
     let settings = {
+      provider: "openai",
       model: "gpt-4.1-mini",
       aiReadScope: "current_note",
       autosave: true,
@@ -44,14 +53,34 @@ test("covers the core note workflow with mocked Tauri commands", async ({
           return Promise.resolve(vault);
         }
         if (command === "list_markdown_files") {
-          return Promise.resolve([
-            {
-              name: "Launch Plan.md",
-              path: "Launch Plan.md",
-              kind: "file",
-              children: [],
-            },
-          ]);
+          return Promise.resolve(fileTree);
+        }
+        if (command === "create_note") {
+          const title = String(args?.title ?? "");
+          const name = title.toLowerCase().endsWith(".md")
+            ? title
+            : `${title}.md`;
+          fileTree = [
+            ...fileTree,
+            { name, path: name, kind: "file", children: [] },
+          ];
+          return Promise.resolve({
+            path: name,
+            title: title.replace(/\.md$/i, ""),
+          });
+        }
+        if (command === "create_folder") {
+          const name = String(args?.name ?? "");
+          fileTree = [
+            ...fileTree,
+            { name, path: name, kind: "folder", children: [] },
+          ];
+          return Promise.resolve({
+            name,
+            path: name,
+            kind: "folder",
+            children: [],
+          });
         }
         if (command === "start_vault_watcher") {
           return Promise.resolve();
@@ -153,6 +182,11 @@ test("covers the core note workflow with mocked Tauri commands", async ({
   await page.getByRole("button", { name: "Settings" }).click();
   await expect(settingsDialog).toBeVisible();
   await expect(settingsDialog).toHaveAttribute("aria-modal", "true");
+  await page.getByLabel("AI provider").selectOption("deepseek");
+  await expect(page.getByLabel("Model")).toHaveValue("deepseek-v4-flash");
+  await expect(page.getByLabel("Show file navigation")).toHaveCount(0);
+  await expect(page.getByLabel("Show AI assistant")).toHaveCount(0);
+  await expect(page.getByLabel("AI assistant on left side")).toHaveCount(0);
   await page.getByRole("button", { name: "Close settings" }).click();
   await expect(settingsDialog).toBeHidden();
 
@@ -161,6 +195,21 @@ test("covers the core note workflow with mocked Tauri commands", async ({
   await expect(page.getByLabel("Markdown file tree")).toContainText(
     "Launch Plan.md",
   );
+  await expect(
+    page.getByRole("button", { name: "ai-note-manager-e2e" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "New file" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "New folder" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Refresh file tree" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Collapse all folders" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "New file" }).click();
+  await page.getByLabel("New file name").fill("Daily");
+  await page.getByRole("button", { name: "Create file" }).click();
+  await expect(page.getByRole("button", { name: "Daily.md" })).toBeVisible();
 
   await page.getByRole("button", { name: "Launch Plan.md" }).click();
   await expect(
