@@ -2,7 +2,7 @@
 
 Date: 2026-07-11
 
-This document records the current implementation state of AI Note Manager after the first 101 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
+This document records the current implementation state of AI Note Manager after the first 102 tracked completion points. The app is usable as a local Markdown note workbench foundation, but it is not yet a complete PRD-level MVP.
 
 ## Completed
 
@@ -308,6 +308,9 @@ This document records the current implementation state of AI Note Manager after 
 
 101. Provider connection checks validate the currently entered API key before saving.
      Evidence: DeepSeek diagnosis confirmed that the existing `deepseek` keyring entry was rejected by the provider with HTTP 401, while the selected endpoint and model request were accepted as syntactically valid. `Check AI connection` now sends the non-empty key currently in the settings form directly to the provider check command before falling back to the stored key. Settings saves now write the keyring entry first and report a visible error if macOS Keychain access fails, instead of silently failing after settings persistence. Frontend tests cover unsaved-key connection checks; the full desktop, browser, frontend, and Rust verification suite remains green.
+
+102. API-key saves avoid legacy macOS Keychain entry conflicts.
+     Evidence: New provider keys are written under the dedicated `com.pluck823.ainotemanager.api-keys` Keychain service, rather than the legacy generic `ai-note-manager` service that can have incompatible access control from earlier tooling. Reads first use the dedicated service and fall back to the legacy service so existing credentials remain usable. Keychain operation failures now retain a diagnostics-only backend error without ever logging API-key content; Rust regression coverage verifies the new service identity.
 
 ## Verification
 
